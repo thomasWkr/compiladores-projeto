@@ -1,0 +1,36 @@
+// Teste básico de Palavras Reservadas
+as 
+declare 
+else 
+float 
+if 
+int 
+is 
+return 
+returns 
+while 
+with 
+
+// Teste básico de Caracteres Especiais
+! * / % + - < > [ ] ( ) = , ; & |
+
+// Teste básico de Operadores Compostos
+<= 
+>= 
+==
+!=
+
+// Teste básico de Identificadores
+_
+_qwerty
+_1
+
+// Teste de Literais
+1
+1234567890
+123.123
+.3423
+353.4343.33
+
+//Teste de Comentarios
+id	// ! * / % + - < > [ ] ( ) = , ; & | @ 353.4343.33 	p´´◘

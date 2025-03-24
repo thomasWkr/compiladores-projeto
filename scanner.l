@@ -28,10 +28,10 @@ with {return TK_PR_WITH;}
 != {return TK_OC_NE;}
 [a-z_][a-z0-9_]* {return TK_ID;} /*identificador*/
 [0-9]+ {return TK_LI_INT;}
-[0-9]*.[0-9]+ {return TK_LI_FLOAT;}
+[0-9]*\.[0-9]+ {return TK_LI_FLOAT;}
 [!/*%+-<>()=,;&|]|\[|\] {return (int)yytext[0];} /*token especial*/
-[\n\t\s]|\ 
-\/\/  
+[\n\t ] 
+\/\/.*
 . {return TK_ER;}
 
 %%
