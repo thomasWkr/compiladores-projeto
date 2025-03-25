@@ -1,0 +1,32 @@
+
+/* exemplo de comentario */
+declare factorial as int returns int with n as int ( 
+    if (n == 0) (
+        return 1;
+    ) else ( 
+        return n * factorial(n - 1);
+    )
+)
+
+/*funct main*/
+declare main as int returns int (
+    declare number as int;
+    declare fact as int;
+    declare result as float;
+
+    number is 5;
+
+    if (number == 5) (
+        fact is factorial(number);
+    ) else ( 
+        fact is 0;
+    )
+
+    result is fact * 1.0;
+
+    while (result >= 1.0) (
+        result is result - 0.5;
+    )   
+
+    return fact;
+)
