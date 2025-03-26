@@ -31,7 +31,7 @@ with {return TK_PR_WITH;}
 [0-9]*\.[0-9]+ {return TK_LI_FLOAT;}
 [!/*%+-<>()=,;&|]|\[|\] {return (int)yytext[0];} /*token especial*/
 [\n\t ] 
-\/\/.*
+\/\/.* /*comentarios*/
 . {return TK_ER;}
 
 %%

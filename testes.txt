@@ -30,7 +30,21 @@ _1
 1234567890
 123.123
 .3423
-353.4343.33
+353.4343.33.33
 
-//Teste de Comentarios
+// Teste de Comentarios
 id	// ! * / % + - < > [ ] ( ) = , ; & | @ 353.4343.33 	p´´◘
+s
+// Teste de Palavras Reservadas + Id
+declare123
+declaresaswith
+
+// Teste de Palavras Reservadas + Caracteres Especiais
+declare*as+with
+
+// Teste de IDs + Caracteres Especiais
+id123!id234*uo&
+
+// Teste de IDs + Numeros
+id123.234.248hy.974.4534
+
