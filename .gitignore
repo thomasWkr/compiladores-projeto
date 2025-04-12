@@ -51,5 +51,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 lex.yy.*
+parser.tab.*
 etapa*
 result*

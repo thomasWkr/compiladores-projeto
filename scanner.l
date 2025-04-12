@@ -1,14 +1,14 @@
-/* Definition Section*/ 
+/* Definition Section*/
 %{
 #include <stdio.h>
 #include <string.h>
-#include "tokens.h"
+#include "parser.tab.h"
 %}
 
 %option yylineno
 %option noyywrap
 
-/* Rule Section*/ 
+/* Rule Section*/
 %%
 
 as {return TK_PR_AS;}

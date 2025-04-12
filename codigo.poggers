@@ -1,14 +1,13 @@
-
-/* exemplo de comentario */
-declare factorial as int returns int with n as int ( 
-    if (n == 0) (
+// exemplo de comentario
+declare factorial as int returns int with n as int [
+    if (n == 0) [
         return 1;
-    ) else ( 
+    ] else [ 
         return n * factorial(n - 1);
-    )
-)
+    ]
+]
 
-/*funct main*/
+// funct main
 declare main as int returns int (
     declare number as int;
     declare fact as int;
