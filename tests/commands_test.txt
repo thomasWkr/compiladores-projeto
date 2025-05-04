@@ -7,6 +7,7 @@ sub_floats returns float with x as float,y as float is[
 ],
 
 main returns float is [
+    [[[]]]
     declare x as float with 1.0
     [
         declare y as float with 2.0
@@ -24,4 +25,9 @@ main returns float is [
     ]
     [[[]]]
     return sub_floats(y,x) as float
+],
+
+main returns float is [
+    if (x >= 1.0)[]
+    else []
 ];

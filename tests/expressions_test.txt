@@ -1,7 +1,7 @@
 declare a as int, declare b as int, declare c as float, declare d as float,
 
 my_function returns int is [
-    a is 5 + 3
+    a is 5 + 3 * 4 | x & y
     b is a - 2
     c is b * 4.5
     d is c / 2.0
