@@ -2,7 +2,9 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include "asd.h"
 #include "parser.tab.h"
+int get_line_number(void);
 %}
 
 %option yylineno
@@ -26,10 +28,51 @@ with {return TK_PR_WITH;}
 \>= {return TK_OC_GE;}
 == {return TK_OC_EQ;}
 != {return TK_OC_NE;}
-[a-z_][a-z0-9_]* {return TK_ID;} /*identificador*/
-[0-9]+ {return TK_LI_INT;}
-[0-9]*\.[0-9]+ {return TK_LI_FLOAT;}
-[!/*%\+\-<>()=,;&\|]|\[|\] {return (int)yytext[0];} /*token especial*/
+
+[a-z_][a-z0-9_]* { 
+	/*identificador*/
+	valor_t *aux = NULL;
+	aux = (valor_t*) malloc(sizeof(valor_t));
+	if (aux == NULL){
+		//KABUM
+	}
+	aux->lexema = strdup(yytext);
+	aux->tipo = 1;
+	aux->no_linha = get_line_number();
+	yylval.valor_lexico = aux;
+	return TK_ID;
+}
+
+[0-9]+ {
+	/*literal int*/
+	valor_t *aux = NULL;
+	aux = (valor_t*) malloc(sizeof(valor_t));
+	if (aux == NULL){
+		//KABUM
+	}
+	aux->lexema = strdup(yytext);
+	aux->tipo = 0;
+	aux->no_linha = get_line_number();
+	yylval.valor_lexico = aux;
+
+	return TK_LI_INT;
+}
+
+[0-9]*\.[0-9]+ {
+	/*literal float*/
+	valor_t *aux = NULL;
+	aux = (valor_t*) malloc(sizeof(valor_t));
+	if (aux == NULL){
+		//KABUM
+	}
+	aux->lexema = strdup(yytext);
+	aux->tipo = 0;
+	aux->no_linha = get_line_number();
+	yylval.valor_lexico = aux;
+	return TK_LI_FLOAT;
+}
+
+[\!\/\*\%\+\-\<\>\(\)\=\,\;\&\||\[|\]] {return (int)yytext[0];} /*token especial*/
 [\n\t ] 
 \/\/.* /*comentarios*/
 . {return TK_ER;}

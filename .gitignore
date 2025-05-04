@@ -50,7 +50,13 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Project specific
+*.png
 lex.yy.*
 parser.tab.*
 etapa*
 result*
+asd
+*.dot
+tests

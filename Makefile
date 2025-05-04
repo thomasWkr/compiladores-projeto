@@ -1,27 +1,22 @@
-CC = gcc
-CFLAGS = -I.
-DEPS = parser.tab.h
+CC = gcc 
+CFLAGS = -I. -fsanitize=address -g 
+DEPS = parser.tab.c asd.c lex.yy.c main.c
 
 ODIR=obj
 
-_OBJ = lex.yy.o main.o parser.tab.o
-OBJ = $(patsubst %, $(ODIR)/%,$(_OBJ))
-
-$(ODIR)/%.o: %.c $(DEPS)
-	@mkdir -p $(@D)
-	$(CC) -c -o $@ $< $(CFLAGS)
+etapa3: $(DEPS)
+	$(CC) -Werror -o $@ $^ $(CFLAGS) -lfl -lm 
 	
-etapa2: $(OBJ)
-	@mkdir -p $(@D)
-	$(CC) -o $@ $^ $(CFLAGS)
-	
-lex.yy.c: scanner.l parser.tab.h
+lex.yy.c: scanner.l asd.h parser.tab.h
 	flex scanner.l
-	
+
 parser.tab.h parser.tab.c: parser.y
 	bison -d parser.y
+
+asd: $(DEPS)
+	$(CC) -o asd $^ -I.
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ lex.yy.c parser.tab.h parser.tab.c
+	rm -f $(ODIR)/*.o *~ lex.yy.c parser.tab* etapa* asd

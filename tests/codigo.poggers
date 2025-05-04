@@ -1,31 +1,31 @@
 // exemplo de comentario
-declare factorial as int returns int with n as int [
+factorial returns int with n as int is [
     if (n == 0) [
-        return 1;
+        return 1 as int
     ] else [ 
-        return n * factorial(n - 1);
+        return n * factorial(n - 1) as int
     ]
-]
-
+],
+declare zero as int,
 // funct main
-declare main as int returns int (
-    declare number as int;
-    declare fact as int;
-    declare result as float;
+main returns int is [
+    declare number as int
+    declare fact as int
+    declare result as float
 
-    number is 5;
+    number is 5
 
-    if (number == 5) (
-        fact is factorial(number);
-    ) else ( 
-        fact is 0;
-    )
+    if (number == 5) [
+        fact is factorial(number)
+     ] else [ 
+        fact is 0
+     ]
 
-    result is fact * 1.0;
+    result is fact * 1.0
 
-    while (result >= 1.0) (
-        result is result - 0.5;
-    )   
+    while (result >= 1.0) [
+        result is result - 0.5
+    ]
 
-    return fact;
-)
+    return fact as int
+];

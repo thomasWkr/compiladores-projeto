@@ -1,90 +1,201 @@
 %{
 #include <stdio.h>
+#include "asd.h"
 
 int yylex(void);
 void yyerror (char const *mensagem);
 int get_line_number(void);
+extern asd_tree_t *arvore;
+
 %}
 
-%token TK_PR_AS
-%token TK_PR_DECLARE
-%token TK_PR_ELSE
-%token TK_PR_FLOAT
-%token TK_PR_IF
-%token TK_PR_INT
-%token TK_PR_IS
-%token TK_PR_RETURN
-%token TK_PR_RETURNS
-%token TK_PR_WHILE
-%token TK_PR_WITH
-%token TK_OC_LE
-%token TK_OC_GE
-%token TK_OC_EQ
-%token TK_OC_NE
-%token TK_ID
-%token TK_LI_INT
-%token TK_LI_FLOAT
-%token TK_ER
+%union{
+	asd_tree_t *no;
+	valor_t *valor_lexico;
+}
+
+%token<valor_lexico> TK_PR_AS
+%token<valor_lexico> TK_PR_DECLARE
+%token<valor_lexico> TK_PR_ELSE
+%token<valor_lexico> TK_PR_FLOAT
+%token<valor_lexico> TK_PR_IF
+%token<valor_lexico> TK_PR_INT
+%token<valor_lexico> TK_PR_IS
+%token<valor_lexico> TK_PR_RETURN
+%token<valor_lexico> TK_PR_RETURNS
+%token<valor_lexico> TK_PR_WHILE
+%token<valor_lexico> TK_PR_WITH
+%token<valor_lexico> TK_OC_LE
+%token<valor_lexico> TK_OC_GE
+%token<valor_lexico> TK_OC_EQ
+%token<valor_lexico> TK_OC_NE
+%token<valor_lexico> TK_ID
+%token<valor_lexico> TK_LI_INT
+%token<valor_lexico> TK_LI_FLOAT
+%token<valor_lexico> TK_ER
+
+%type<no> program
+%type<no> list
+%type<no> n0
+%type<no> n1
+%type<no> n2
+%type<no> n3
+%type<no> n4
+%type<no> n5
+%type<no> n6
+%type<no> n7
+%type<no> type
+%type<no> literal
+%type<no> element
+%type<no> parameter
+%type<no> parameter_list
+%type<no> header
+%type<no> simple_command
+%type<no> command_seq
+%type<no> command_block
+%type<no> def_func
+%type<no> decl_var
+%type<no> var
+%type<no> assign
+%type<no> func_call
+%type<no> args_list
+%type<no> return_call
+%type<no> flux_controll
+%type<no> cond_block
+%type<no> iter_block
+%type<no> expr
 
 %define parse.error verbose
 
 %%
-program: list ';';
-program: ;
+program: list ';' {arvore = $1;};
+program: { arvore = NULL; };
 
-type: TK_PR_INT | TK_PR_FLOAT;
+type: TK_PR_INT { $$ = asd_new("int"); };
+type: TK_PR_FLOAT { $$ = asd_new("float"); };
 
-literal: TK_LI_INT | TK_LI_FLOAT;
+literal: TK_LI_INT { $$ = asd_new($1->lexema); };
+literal: TK_LI_FLOAT { $$ = asd_new($1->lexema); };
 
-element: def_func | decl_var;
+element: def_func { $$ = $1; };
+element: decl_var { $$ = $1; };
 
-list: element | element ',' list;
+list: element { $$ = $1; }; 
+list: element ',' list { $$ = $1; asd_add_child($1, $3); };
 
-parameter: TK_ID TK_PR_AS type;
-parameter_list: parameter | parameter ',' parameter_list;
+parameter: TK_ID TK_PR_AS type { $$ = asd_new($1->lexema); };
+parameter_list: parameter { $$ = $1; }; 
+parameter_list: parameter ',' parameter_list { $$ = $1; };
 
-header: TK_ID TK_PR_RETURNS type TK_PR_IS;
-header: TK_ID TK_PR_RETURNS type TK_PR_WITH parameter_list TK_PR_IS;
+header: TK_ID TK_PR_RETURNS type TK_PR_IS { $$ = asd_new( $1->lexema );  }; 
+header: TK_ID TK_PR_RETURNS type TK_PR_WITH parameter_list TK_PR_IS { $$ = asd_new( $1->lexema ); };
 
-simple_command: command_block | var | assign | func_call | return_call | flux_controll;
+simple_command: command_block { $$ = $1; }; 
+simple_command: var { $$ = $1; }; 
+simple_command: assign { $$ = $1; };
+simple_command: func_call { $$ = $1; };
+simple_command: return_call { $$ = $1; };
+simple_command: flux_controll { $$ = $1; };
 
-command_seq: ;
-command_seq: simple_command command_seq;
+command_seq: simple_command { $$ = $1;};
+command_seq: simple_command command_seq { 
+	if ($1 == NULL) {
+		$$ = $2;
+	}
+	else if ($2 != NULL){ 
+		asd_add_child($1, $2); 
+	} else {
+		$$ = $1; 
+	}
+};
 
-command_block: '[' command_seq ']';
+command_block: '[' command_seq ']' { $$ = $2; }; 
+command_block: '[' ']' { $$ = NULL; }; //problema
 
-def_func: header command_block;
-decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type;
+def_func: header command_block { $$ = $1; asd_add_child($1, $2); };
+decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type { $$ = asd_new($2->lexema); };
 
-var: decl_var TK_PR_WITH literal | decl_var;
+var: decl_var TK_PR_WITH literal { $$ = asd_new("with"); asd_add_child($$,$3); asd_add_child($$,$1); };
+var: decl_var { $$ = $1; };
 
-assign: TK_ID TK_PR_IS expr;
+assign: TK_ID TK_PR_IS expr { $$ = asd_new("is");
+	asd_tree_t *id = asd_new($1->lexema); 
+	asd_add_child($$, id); 
+	asd_add_child($$, $3);
+};
 
-func_call: TK_ID '(' args_list ')'; | TK_ID '(' ')';
+func_call: TK_ID '(' args_list ')' {
+	char* id = $1->lexema;
+	char name[256];
+	sprintf(name, "call %s", id);
+	$$ = asd_new(name);
+	asd_add_child($$, $3); 
+};
 
-args_list: expr ',' args_list | expr;
+func_call: TK_ID '(' ')' {
+	char* id = $1->lexema;
+	char name[256];
+	sprintf(name, "call %s", id);
+	$$ = asd_new(name);
+};
 
-return_call: TK_PR_RETURN expr TK_PR_AS type;
+args_list: expr ',' args_list { $$ = $1; asd_add_child($$, $3); }; 
+args_list: expr { $$ = $1; };
 
-flux_controll: cond_block | iter_block;
+return_call: TK_PR_RETURN expr TK_PR_AS type { $$ = asd_new("return"); asd_add_child($$, $2); };
 
-cond_block: TK_PR_IF '(' expr ')' command_block;
-cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block;
+flux_controll: cond_block { $$ = $1; };
+flux_controll: iter_block { $$ = $1; };
 
-iter_block: TK_PR_WHILE '(' expr ')' command_block;
+cond_block: TK_PR_IF '(' expr ')' command_block { $$ = asd_new("if"); asd_add_child($$, $3); asd_add_child($$, $5); };
+cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block { 
+		$$ = asd_new("if"); 
+		asd_add_child($$, $3);
+		asd_add_child($$, $5);
+		asd_add_child($$, $7);  
+	};
 
-n0: TK_ID | literal | func_call | '(' expr ')';
-n1: '+' n1 | '-' n1 | '!' n1 | n0;
-n2: n1 '*' n2 | n1 '/' n2 | n1 '%' n2 | n1;
-n3: n2 '+' n3 | n2 '-' n3 | n2;
-n4: n3 '<' n4 | n3 '>' n4  | n3 TK_OC_LE n4 | n3 TK_OC_GE n4 | n3;
-n5: n4 TK_OC_EQ n5 | n4 TK_OC_NE n5 | n4;
-n6: n5 '&' n6 | n5;
-n7: n6 '|' n7 | n6;
-expr: n7;
+iter_block: TK_PR_WHILE '(' expr ')' command_block { $$ = asd_new("while"); asd_add_child($$, $3); asd_add_child($$, $5); };
+
+n0: TK_ID { $$ = asd_new($1->lexema); }; 
+n0: literal { $$ = $1; };
+n0: func_call { $$ = $1; };
+n0: '(' expr ')' { $$ = $2; };
+
+n1: '+' n1 { $$ = asd_new("+"); asd_add_child($$, $2); };
+n1: '-' n1 { $$ = asd_new("-"); asd_add_child($$, $2); };
+n1: '!' n1 { $$ = asd_new("!"); asd_add_child($$, $2); };
+n1: n0 { $$ = $1; };
+
+n2: n1 '*' n2 { $$ = asd_new("*"); asd_add_child($$, $1); asd_add_child($$, $3); };
+n2: n1 '/' n2 { $$ = asd_new("/"); asd_add_child($$, $1); asd_add_child($$, $3); };
+n2: n1 '%' n2 { $$ = asd_new("\%"); asd_add_child($$, $1); asd_add_child($$, $3); }; 
+n2: n1 { $$ = $1; };
+
+n3: n2 '+' n3 { $$ = asd_new("+"); asd_add_child($$, $1); asd_add_child($$, $3); };
+n3: n2 '-' n3 { $$ = asd_new("-"); asd_add_child($$, $1); asd_add_child($$, $3); };
+n3: n2 { $$ = $1; };
+
+n4: n3 '<' n4 { $$ = asd_new("<"); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n3 '>' n4 { $$ = asd_new(">"); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n3 TK_OC_LE n4 { $$ = asd_new("<="); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n3 TK_OC_GE n4 { $$ = asd_new(">="); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n3 { $$ = $1; };
+
+n5: n4 TK_OC_EQ n5 { $$ = asd_new("=="); asd_add_child($$, $1); asd_add_child($$, $3); };
+n5: n4 TK_OC_NE n5 { $$ = asd_new("!="); asd_add_child($$, $1); asd_add_child($$, $3); }; 
+n5: n4 { $$ = $1; };
+
+n6: n5 '&' n6 { $$ = asd_new("&"); asd_add_child($$, $1); asd_add_child($$, $3); };
+n6: n5 { $$ = $1; };
+
+n7: n6 '|' n7 { $$ = asd_new("|");  asd_add_child($$, $1); asd_add_child($$, $3); };
+n7: n6 { $$ = $1; };
+
+expr: n7 { $$ = $1; };
 
 %%
 
 void yyerror(char const *mensagem){
-    printf("Erro no linha: %d , %s\n", get_line_number(), mensagem);
+    printf("Row: %d, %s\n", get_line_number(), mensagem);
 }
