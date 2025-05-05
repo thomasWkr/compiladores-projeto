@@ -208,29 +208,29 @@ n1: '-' n1 { $$ = asd_new("-", NULL); asd_add_child($$, $2); };
 n1: '!' n1 { $$ = asd_new("!", NULL); asd_add_child($$, $2); };
 n1: n0 { $$ = $1; };
 
-n2: n1 '*' n2 { $$ = asd_new("*", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n2: n1 '/' n2 { $$ = asd_new("/", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n2: n1 '%' n2 { $$ = asd_new("\%", NULL); asd_add_child($$, $1); asd_add_child($$, $3); }; 
+n2: n2 '*' n1 { $$ = asd_new("*", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n2: n2 '/' n1 { $$ = asd_new("/", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n2: n2 '%' n1 { $$ = asd_new("\%", NULL); asd_add_child($$, $1); asd_add_child($$, $3); }; 
 n2: n1 { $$ = $1; };
 
-n3: n2 '+' n3 { $$ = asd_new("+", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n3: n2 '-' n3 { $$ = asd_new("-", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n3: n3 '+' n2 { $$ = asd_new("+", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n3: n3 '-' n2 { $$ = asd_new("-", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
 n3: n2 { $$ = $1; };
 
-n4: n3 '<' n4 { $$ = asd_new("<", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n4: n3 '>' n4 { $$ = asd_new(">", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n4: n3 TK_OC_LE n4 { $$ = asd_new("<=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n4: n3 TK_OC_GE n4 { $$ = asd_new(">=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n4 '<' n3 { $$ = asd_new("<", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n4 '>' n3 { $$ = asd_new(">", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n4 TK_OC_LE n3 { $$ = asd_new("<=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n4 TK_OC_GE n3 { $$ = asd_new(">=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
 n4: n3 { $$ = $1; };
 
-n5: n4 TK_OC_EQ n5 { $$ = asd_new("==", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n5: n4 TK_OC_NE n5 { $$ = asd_new("!=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); }; 
+n5: n5 TK_OC_EQ n4 { $$ = asd_new("==", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n5: n5 TK_OC_NE n4 { $$ = asd_new("!=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); }; 
 n5: n4 { $$ = $1; };
 
-n6: n5 '&' n6 { $$ = asd_new("&", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n6: n6 '&' n5 { $$ = asd_new("&", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
 n6: n5 { $$ = $1; };
 
-n7: n6 '|' n7 { $$ = asd_new("|", NULL);  asd_add_child($$, $1); asd_add_child($$, $3); };
+n7: n7 '|' n6 { $$ = asd_new("|", NULL);  asd_add_child($$, $1); asd_add_child($$, $3); };
 n7: n6 { $$ = $1; };
 
 expr: n7 { $$ = $1; };

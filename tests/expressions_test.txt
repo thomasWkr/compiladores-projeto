@@ -1,7 +1,7 @@
 declare a as int, declare b as int, declare c as float, declare d as float,
 
 my_function returns int is [
-    a is - ! 5 + (3 - 6) * 4 == 5 >= func (x) | x & y
+    a is - ! 5 + 4 - (3 - 6) * 4 == 5 >= func (x) | x & y
     b is a - 2
     c is b * 4.5
     d is c / 2.0
