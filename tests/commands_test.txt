@@ -24,9 +24,10 @@ main returns float is [
         ]
     ]
     [[[]]]
+    [[[]]]
     return sub_floats(y,x) as float
 ],
-
+declare zero as int,
 main returns float is [
     if (x >= 1.0)[]
     else []

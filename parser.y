@@ -82,10 +82,19 @@ literal: TK_LI_FLOAT {
 };
 
 element: def_func { $$ = $1; };
-element: decl_var { $$ = $1; };
+element: decl_var { $$ = NULL; asd_free($1);};
 
 list: element { $$ = $1; }; 
-list: element ',' list { $$ = $1; asd_add_child($1, $3); };
+list: element ',' list { 
+	if ($1 == NULL) {
+		$$ = $3;
+	}
+	else if ($3 != NULL){ 
+		asd_add_child($1, $3);
+	} else {
+		$$ = $1; 
+	}
+}
 
 parameter: TK_ID TK_PR_AS type { 
 	$$ = NULL;
@@ -135,7 +144,7 @@ decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type {
 };
 
 var: decl_var TK_PR_WITH literal { $$ = asd_new("with", NULL); asd_add_child($$,$3); asd_add_child($$,$1); };
-var: decl_var { $$ = $1; };
+var: decl_var { $$ = NULL; asd_free($1);};
 
 assign: TK_ID TK_PR_IS expr { 
 	$$ = asd_new("is", NULL);
