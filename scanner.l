@@ -2,7 +2,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
-#include "asd.h"
+#include "table.h"
 #include "parser.tab.h"
 int get_line_number(void);
 %}

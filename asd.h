@@ -1,14 +1,6 @@
 #ifndef _ASD_H_
 #define _ASD_H_
-
-// 0 - literal
-// 1 - token id
-typedef struct valor
-{
-  char *lexema;
-  int no_linha;
-  int tipo;
-} valor_t;
+#include "table.h"
 
 typedef struct asd_tree
 {

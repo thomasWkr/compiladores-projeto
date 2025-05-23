@@ -1,7 +1,6 @@
 %{
 #include <stdio.h>
 #include "asd.h"
-#include "table.h"
 
 int yylex(void);
 void yyerror (char const *mensagem);
