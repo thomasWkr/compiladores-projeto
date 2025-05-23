@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 #include "asd.h"
+#include "table.h"
 
 int yylex(void);
 void yyerror (char const *mensagem);
@@ -68,7 +69,7 @@ extern asd_tree_t *arvore;
 %define parse.error verbose
 
 %%
-program: list ';' {arvore = $1;};
+program: create_scope list destroy_scope ';' {arvore = $1;};
 program: { arvore = NULL; };
 
 type: TK_PR_INT {$$ = NULL;};
@@ -107,7 +108,7 @@ parameter_list: parameter ',' parameter_list { $$ = $1; };
 header: TK_ID TK_PR_RETURNS type TK_PR_IS { 
 	$$ = asd_new( $1->lexema, $1); 
 }; 
-header: TK_ID TK_PR_RETURNS type TK_PR_WITH parameter_list TK_PR_IS { 
+header: TK_ID TK_PR_RETURNS type TK_PR_WITH create_scope parameter_list TK_PR_IS { 
 	$$ = asd_new( $1->lexema, $1 ); 
 	free($5);
 };
@@ -131,10 +132,10 @@ command_seq: simple_command command_seq {
 	}
 };
 
-command_block: '[' command_seq ']' { $$ = $2; }; 
+command_block: '[' create_scope command_seq destroy_scope ']' { $$ = $2; }; 
 command_block: '[' ']' { $$ = NULL; }; //problema
 
-def_func: header command_block { 
+def_func: header command_block destroy_scope { 
 	$$ = $1;
 	if ($2 != NULL) 
 		asd_add_child($1, $2); 
