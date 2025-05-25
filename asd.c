@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "asd.h"
 
-asd_tree_t *asd_new(const char *label, valor_t *lexic_value)
+asd_tree_t *asd_new(const char *label, value_t *lexic_value, type_t type)
 {
   asd_tree_t *ret = NULL;
   ret = calloc(1, sizeof(asd_tree_t));
@@ -13,6 +13,7 @@ asd_tree_t *asd_new(const char *label, valor_t *lexic_value)
     ret->number_of_children = 0;
     ret->children = NULL;
     ret->lexic_value = lexic_value;
+    ret->type = type;
   }
   return ret;
 }
@@ -28,7 +29,7 @@ void asd_free(asd_tree_t *tree)
     }
     if (tree->lexic_value != NULL)
     {
-      free(tree->lexic_value->lexema);
+      free(tree->lexic_value->lexeme);
       free(tree->lexic_value);
     }
     free(tree->children);
@@ -125,7 +126,7 @@ static void _asd_print_graphviz2(FILE *foutput, asd_tree_t *tree)
   {
     if (tree->lexic_value != NULL)
     {
-      fprintf(foutput, "  %ld [ label=\"%s\nlinha %d, tipo %d\" ];\n", (long)tree, tree->label, tree->lexic_value->no_linha, tree->lexic_value->tipo);
+      fprintf(foutput, "  %ld [ label=\"%s\nlinha %d, natureza %d, tipo %d\" ];\n", (long)tree, tree->label, tree->lexic_value->line_number, tree->lexic_value->nature, tree->type);
     }
     else
     {

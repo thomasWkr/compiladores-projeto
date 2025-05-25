@@ -11,7 +11,7 @@ extern asd_tree_t *arvore;
 
 %union{
 	asd_tree_t *no;
-	valor_t *valor_lexico;
+	value_t *valor_lexico;
 }
 
 %token<valor_lexico> TK_PR_AS
@@ -68,17 +68,21 @@ extern asd_tree_t *arvore;
 %define parse.error verbose
 
 %%
-program: create_scope list destroy_scope ';' {arvore = $1;};
+program: {create_scope();} list {destroy_scope();} ';' {arvore = $1;};
 program: { arvore = NULL; };
 
-type: TK_PR_INT {$$ = NULL;};
-type: TK_PR_FLOAT {$$ = NULL;};
+type: TK_PR_INT {$$ = INT;};
+type: TK_PR_FLOAT {$$ = FLOAT;};
 
 literal: TK_LI_INT { 
-	$$ = asd_new($1->lexema, $1); 
+	content_t *content= create_content(INT, LITERAL, NULL, $1);
+	update_table(content, $1->lexeme);
+	$$ = asd_new($1->lexeme, $1, INT); 
 };
 literal: TK_LI_FLOAT { 
-	$$ = asd_new($1->lexema, $1); 
+	content_t *content= create_content(FLOAT, LITERAL, NULL, $1);
+	update_table(content, $1->lexeme);
+	$$ = asd_new($1->lexeme, $1, FLOAT); 
 };
 
 element: def_func { $$ = $1; };
@@ -98,17 +102,21 @@ list: element ',' list {
 
 parameter: TK_ID TK_PR_AS type { 
 	$$ = NULL;
-	free($1->lexema); 
+	free($1->lexeme); 
 	free($1);
 };
 parameter_list: parameter { $$ = $1; }; 
 parameter_list: parameter ',' parameter_list { $$ = $1; };
 
 header: TK_ID TK_PR_RETURNS type TK_PR_IS { 
-	$$ = asd_new( $1->lexema, $1); 
+	content_t *content= create_content($3, FUNCTION, NULL, $1);
+	update_table(content);
+	$$ = asd_new( $1->lexeme, $1, $3); 
 }; 
-header: TK_ID TK_PR_RETURNS type TK_PR_WITH create_scope parameter_list TK_PR_IS { 
-	$$ = asd_new( $1->lexema, $1 ); 
+header: TK_ID TK_PR_RETURNS type TK_PR_WITH /*create_scope*/ parameter_list TK_PR_IS { 
+	content_t *content= create_content($3, FUNCTION, NULL, $1);
+	update_table(content);
+	$$ = asd_new( $1->lexeme, $1, $3); 
 	free($5);
 };
 
@@ -131,38 +139,44 @@ command_seq: simple_command command_seq {
 	}
 };
 
-command_block: '[' create_scope command_seq destroy_scope ']' { $$ = $2; }; 
-command_block: '[' ']' { $$ = NULL; }; //problema
+command_block: '[' {create_scope();} command_seq {destroy_scope();} ']' { $$ = $2; }; 
+command_block: '[' ']' { $$ = NULL; };
 
-def_func: header command_block destroy_scope { 
+def_func: header command_block {destroy_scope()} { 
 	$$ = $1;
 	if ($2 != NULL) 
 		asd_add_child($1, $2); 
 };
 decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type { 
-	$$ = asd_new($2->lexema, $2); 
+	content_t *content= create_content($4, ID, NULL, $2);
+	update_table(content);
+	$$ = asd_new($2->lexeme, $2, $4);
 };
 
-var: decl_var TK_PR_WITH literal { $$ = asd_new("with", NULL); asd_add_child($$,$3); asd_add_child($$,$1); };
+var: decl_var TK_PR_WITH literal { 
+	$$ = asd_new("with", NULL); 
+	asd_add_child($$,$3); 
+	asd_add_child($$,$1); 
+};
 var: decl_var { $$ = NULL; asd_free($1);};
 
 assign: TK_ID TK_PR_IS expr { 
 	$$ = asd_new("is", NULL);
-	asd_tree_t *id = asd_new($1->lexema, $1); 
+	asd_tree_t *id = asd_new($1->lexeme, $1); 
 	asd_add_child($$, id); 
 	asd_add_child($$, $3);
 };
 
 func_call: TK_ID '(' args_list ')' {
 	char name[256];
-	sprintf(name, "call %s", $1->lexema);
+	sprintf(name, "call %s", $1->lexeme);
 	$$ = asd_new(name, $1);
 	asd_add_child($$, $3); 
 };
 
 func_call: TK_ID '(' ')' {
 	char name[256];
-	sprintf(name, "call %s", $1->lexema);
+	sprintf(name, "call %s", $1->lexeme);
 	$$ = asd_new(name, $1);
 };
 
@@ -197,7 +211,7 @@ iter_block: TK_PR_WHILE '(' expr ')' command_block {
 };
 
 n0: TK_ID { 
-	$$ = asd_new($1->lexema, $1); 
+	$$ = asd_new($1->lexeme, $1); 
 }; 
 n0: literal { $$ = $1; };
 n0: func_call { $$ = $1; };

@@ -1,19 +1,20 @@
 #ifndef _ASD_H_
 #define _ASD_H_
-#include "table.h"
+#include "scope.h"
 
 typedef struct asd_tree
 {
   char *label;
   int number_of_children;
   struct asd_tree **children;
-  valor_t *lexic_value;
+  value_t *lexic_value;
+  type_t type;
 } asd_tree_t;
 
 /*
  * Função asd_new, cria um nó sem filhos com o label informado.
  */
-asd_tree_t *asd_new(const char *label, valor_t *lexic_value);
+asd_tree_t *asd_new(const char *label, value_t *lexic_value, type_t type);
 
 /*
  * Função asd_tree, libera recursivamente o nó e seus filhos.

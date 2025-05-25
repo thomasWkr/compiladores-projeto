@@ -1,22 +1,20 @@
 CC = gcc 
 CFLAGS = -I. -fsanitize=address -g 
-DEPS = parser.tab.c asd.c lex.yy.c main.c
+DEPS = parser.tab.c asd.c table.c scope.c lex.yy.c main.c
+INCLUDE = asd.h table.h scope.h
 
 ODIR=obj
 
 etapa3: $(DEPS)
 	$(CC) -Werror -o $@ $^ $(CFLAGS) -lfl -lm 
 	
-lex.yy.c: scanner.l asd.h parser.tab.h
+lex.yy.c: scanner.l parser.tab.h $(INCLUDE)
 	flex scanner.l
 
-parser.tab.h parser.tab.c: parser.y
+parser.tab.h parser.tab.c: parser.y $(INCLUDE)
 	bison -d parser.y
-
-asd: $(DEPS)
-	$(CC) -o asd $^ -I.
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ lex.yy.c parser.tab* etapa* asd
+	rm -f $(ODIR)/*.o *~ lex.yy.c parser.tab* etapa* *.dot *.png

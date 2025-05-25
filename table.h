@@ -1,37 +1,57 @@
 typedef enum
 {
-    Inteiro,
-    Flutuante,
-} tipo_t;
+    INT,
+    FLOAT,
+} type_t;
 
 typedef enum
 {
-    Literal,
-    Identificador,
-    Funcao,
-} natureza_t;
+    LITERAL,
+    ID,
+    FUNCTION,
+} nature_t;
+
 typedef struct
 {
-    int quantidade_de_parametros;
-    tipo_t *tipo_dos_argumentos;
-} parametros_t;
+    int params_count;
+    type_t *args_type;
+} parameters_t;
 
-// 0 - literal
-// 1 - token id
 typedef struct valor
 {
-    char *lexema;
-    int no_linha;
-    tipo_t tipo;
-} valor_t;
+    char *lexeme;
+    int line_number;
+    nature_t nature;
+} value_t;
+
 typedef struct
 {
-    natureza_t natureza;
-    parametros_t argumentos;
-    valor_t dados;
-} conteudo_t;
-typedef struct
+    type_t type;
+    nature_t nature;
+    parameters_t *args;
+    value_t *data;
+} content_t;
+
+typedef struct symbol_t
 {
-    int chave;
-    conteudo_t conteudo;
-} entrada_t;
+    char *key;
+    content_t *content;
+    struct symbol_t *next_symbol;
+} symbol_t;
+
+// Functions
+value_t *create_lexic_value(nature_t nature, char *lexeme, int line_number);
+
+content_t *create_content(type_t type, nature_t nature, parameters_t *args, value_t *data);
+
+symbol_t *new_table(content_t *content, char *key);
+
+void add_symbol(content_t *content, symbol_t *previous_symbol, char *key);
+
+symbol_t *get_symbol(symbol_t *first_symbol, char *key);
+
+void free_table(symbol_t *symbol_table);
+
+const char *type_to_str(type_t type);
+
+const char *nature_to_str(nature_t nature);

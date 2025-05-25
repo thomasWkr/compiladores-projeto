@@ -2,7 +2,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
-#include "table.h"
+#include "asd.h"
 #include "parser.tab.h"
 int get_line_number(void);
 %}
@@ -31,44 +31,19 @@ with {return TK_PR_WITH;}
 
 [a-z_][a-z0-9_]* { 
 	/*identificador*/
-	valor_t *aux = NULL;
-	aux = (valor_t*) malloc(sizeof(valor_t));
-	if (aux == NULL){
-		//KABUM
-	}
-	aux->lexema = strdup(yytext);
-	aux->tipo = 1;
-	aux->no_linha = get_line_number();
-	yylval.valor_lexico = aux;
+	yylval.valor_lexico = create_lexic_value(ID, yytext, get_line_number());
 	return TK_ID;
 }
 
 [0-9]+ {
 	/*literal int*/
-	valor_t *aux = NULL;
-	aux = (valor_t*) malloc(sizeof(valor_t));
-	if (aux == NULL){
-		//KABUM
-	}
-	aux->lexema = strdup(yytext);
-	aux->tipo = 0;
-	aux->no_linha = get_line_number();
-	yylval.valor_lexico = aux;
-
+	yylval.valor_lexico = create_lexic_value(LITERAL, yytext, get_line_number());
 	return TK_LI_INT;
 }
 
 [0-9]*\.[0-9]+ {
 	/*literal float*/
-	valor_t *aux = NULL;
-	aux = (valor_t*) malloc(sizeof(valor_t));
-	if (aux == NULL){
-		//KABUM
-	}
-	aux->lexema = strdup(yytext);
-	aux->tipo = 0;
-	aux->no_linha = get_line_number();
-	yylval.valor_lexico = aux;
+	yylval.valor_lexico = create_lexic_value(LITERAL, yytext, get_line_number());
 	return TK_LI_FLOAT;
 }
 
@@ -82,6 +57,5 @@ with {return TK_PR_WITH;}
 /* Code Section */ 
 
 int get_line_number(void){
- 
- return yylineno;
+	return yylineno;
 }
