@@ -70,10 +70,10 @@ void free_table(symbol_t *symbol_table)
 
             if (sym->content->data)
             {
-                // free(sym->content->data->lexeme);
-                // free(sym->content->data);
+                free(sym->content->data->lexeme);
+                free(sym->content->data);
             }
-            // free(sym->key);
+            free(sym->key);
             free(sym->content);
         }
         free(sym);

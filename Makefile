@@ -5,7 +5,7 @@ INCLUDE = asd.h table.h scope.h
 
 ODIR=obj
 
-etapa3: $(DEPS)
+etapa4: $(DEPS)
 	$(CC) -Werror -o $@ $^ $(CFLAGS) -lfl -lm 
 	
 lex.yy.c: scanner.l parser.tab.h $(INCLUDE)

@@ -1,4 +1,6 @@
 %{
+#include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include "asd.h"
 
@@ -13,6 +15,12 @@ extern asd_tree_t *arvore;
 	asd_tree_t *no;
 	value_t *valor_lexico;
 }
+
+%destructor{
+	if ($$ != NULL && $$ != arvore){
+		asd_free($$);
+	}
+} <no>;
 
 %token<valor_lexico> TK_PR_AS
 %token<valor_lexico> TK_PR_DECLARE
@@ -68,11 +76,11 @@ extern asd_tree_t *arvore;
 %define parse.error verbose
 
 %%
-program: {create_scope();} list {destroy_scope();} ';' {arvore = $1;};
+program: {create_scope();} list {destroy_scope();} ';' {arvore = $2;};
 program: { arvore = NULL; };
 
-type: TK_PR_INT {$$ = INT;};
-type: TK_PR_FLOAT {$$ = FLOAT;};
+type: TK_PR_INT {$$ = asd_new("int", NULL, INT);};
+type: TK_PR_FLOAT {$$ = asd_new("float", NULL, FLOAT);};
 
 literal: TK_LI_INT { 
 	content_t *content= create_content(INT, LITERAL, NULL, $1);
@@ -101,23 +109,28 @@ list: element ',' list {
 }
 
 parameter: TK_ID TK_PR_AS type { 
+	content_t *content= create_content($3->type, ID, NULL, $1);
+	update_table(content, strdup($1->lexeme));
+
 	$$ = NULL;
 	free($1->lexeme); 
-	free($1);
+	asd_free($3);
 };
 parameter_list: parameter { $$ = $1; }; 
 parameter_list: parameter ',' parameter_list { $$ = $1; };
-
+ 
 header: TK_ID TK_PR_RETURNS type TK_PR_IS { 
-	content_t *content= create_content($3, FUNCTION, NULL, $1);
-	update_table(content);
-	$$ = asd_new( $1->lexeme, $1, $3); 
+	content_t *content= create_content($3->type, FUNCTION, NULL, $1);
+	update_table(content, $1->lexeme);
+	$$ = asd_new( $1->lexeme, $1, $3->type); 
+	asd_free($3);
 }; 
-header: TK_ID TK_PR_RETURNS type TK_PR_WITH /*create_scope*/ parameter_list TK_PR_IS { 
-	content_t *content= create_content($3, FUNCTION, NULL, $1);
-	update_table(content);
-	$$ = asd_new( $1->lexeme, $1, $3); 
-	free($5);
+header: TK_ID TK_PR_RETURNS type TK_PR_WITH {create_scope();} parameter_list TK_PR_IS { 
+	content_t *content= create_content($3->type, FUNCTION, NULL, $1);
+	update_table(content, $1->lexeme);
+	$$ = asd_new( $1->lexeme, $1, $3->type); 
+	asd_free($3);
+	free($6);
 };
 
 simple_command: command_block { $$ = $1; }; 
@@ -139,63 +152,85 @@ command_seq: simple_command command_seq {
 	}
 };
 
-command_block: '[' {create_scope();} command_seq {destroy_scope();} ']' { $$ = $2; }; 
+command_block: '[' {create_scope();} command_seq {destroy_scope();} ']' { $$ = $3; }; 
 command_block: '[' ']' { $$ = NULL; };
 
-def_func: header command_block {destroy_scope()} { 
+def_func: header command_block {destroy_scope();} { 
 	$$ = $1;
 	if ($2 != NULL) 
 		asd_add_child($1, $2); 
 };
-decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type { 
-	content_t *content= create_content($4, ID, NULL, $2);
-	update_table(content);
-	$$ = asd_new($2->lexeme, $2, $4);
+decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type {
+	content_t *content= create_content($4->type, ID, NULL, $2);
+	update_table(content, strdup($2->lexeme));
+	$$ = asd_new($2->lexeme, $2, $4->type);
+	asd_free($4);
 };
 
 var: decl_var TK_PR_WITH literal { 
-	$$ = asd_new("with", NULL); 
+	compare_type($1->type, $3->type);
+	$$ = asd_new("with", NULL, $1->type); 
 	asd_add_child($$,$3); 
 	asd_add_child($$,$1); 
 };
 var: decl_var { $$ = NULL; asd_free($1);};
 
 assign: TK_ID TK_PR_IS expr { 
-	$$ = asd_new("is", NULL);
-	asd_tree_t *id = asd_new($1->lexeme, $1); 
+	check_declared($1, $1->lexeme);
+	type_t type_id = get_symbol_from_scope($1->lexeme)->content->type;
+	compare_type(type_id, $3->type);
+
+	$$ = asd_new("is", NULL, type_id);
+	asd_tree_t *id = asd_new($1->lexeme, $1, type_id); 
 	asd_add_child($$, id); 
 	asd_add_child($$, $3);
 };
 
 func_call: TK_ID '(' args_list ')' {
+	check_declared($1, $1->lexeme);
+	type_t type_function = get_symbol_from_scope($1->lexeme)->content->type;
+
 	char name[256];
 	sprintf(name, "call %s", $1->lexeme);
-	$$ = asd_new(name, $1);
+	$$ = asd_new(name, $1, type_function);
 	asd_add_child($$, $3); 
 };
 
 func_call: TK_ID '(' ')' {
+	check_declared($1, $1->lexeme);
+	type_t type_function = get_symbol_from_scope($1->lexeme)->content->type;
+
 	char name[256];
 	sprintf(name, "call %s", $1->lexeme);
-	$$ = asd_new(name, $1);
+	$$ = asd_new(name, $1, type_function);
 };
 
 args_list: expr ',' args_list { $$ = $1; asd_add_child($$, $3); }; 
 args_list: expr { $$ = $1; };
 
-return_call: TK_PR_RETURN expr TK_PR_AS type { $$ = asd_new("return", NULL); asd_add_child($$, $2); };
+return_call: TK_PR_RETURN expr TK_PR_AS type { 
+	compare_type($2->type, $4->type);
+	symbol_t *latest_function = get_latest_function();
+	compare_type($2->type, latest_function->content->type);
+
+	$$ = asd_new("return", NULL, $4->type); 
+	asd_add_child($$, $2); 
+	asd_free($4);
+};
 
 flux_controll: cond_block { $$ = $1; };
 flux_controll: iter_block { $$ = $1; };
 
 cond_block: TK_PR_IF '(' expr ')' command_block { 
-	$$ = asd_new("if", NULL); 
+	$$ = asd_new("if", NULL, $3->type); 
 	asd_add_child($$, $3); 
 	if ($5 != NULL) 
 		asd_add_child($$, $5); 
 };
 cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block { 
-	$$ = asd_new("if", NULL); 
+	compare_type($5->type, $7->type);
+
+	$$ = asd_new("if", NULL, $5->type); 
 	asd_add_child($$, $3);
 	if ($5 != NULL) 
 		asd_add_child($$, $5); 
@@ -204,47 +239,134 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 };
 
 iter_block: TK_PR_WHILE '(' expr ')' command_block { 
-	$$ = asd_new("while", NULL); 
+	$$ = asd_new("while", NULL, $3->type); 
 	asd_add_child($$, $3); 
 	if ($5 != NULL) 
 		asd_add_child($$, $5); 
 };
 
 n0: TK_ID { 
-	$$ = asd_new($1->lexeme, $1); 
+	check_declared($1, $1->lexeme);
+	type_t type_id = get_symbol_from_scope($1->lexeme)->content->type;
+
+	$$ = asd_new($1->lexeme, $1, type_id); 
 }; 
 n0: literal { $$ = $1; };
 n0: func_call { $$ = $1; };
 n0: '(' expr ')' { $$ = $2; };
 
-n1: '+' n1 { $$ = asd_new("+", NULL); asd_add_child($$, $2); };
-n1: '-' n1 { $$ = asd_new("-", NULL); asd_add_child($$, $2); };
-n1: '!' n1 { $$ = asd_new("!", NULL); asd_add_child($$, $2); };
+n1: '+' n1 { 
+	$$ = asd_new("+", NULL, $2->type); 
+	asd_add_child($$, $2); 
+};
+n1: '-' n1 { 
+	$$ = asd_new("-", NULL, $2->type); 
+	asd_add_child($$, $2); 
+};
+n1: '!' n1 { 
+	$$ = asd_new("!", NULL, $2->type); 
+	asd_add_child($$, $2); 
+};
 n1: n0 { $$ = $1; };
 
-n2: n2 '*' n1 { $$ = asd_new("*", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n2: n2 '/' n1 { $$ = asd_new("/", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n2: n2 '%' n1 { $$ = asd_new("\%", NULL); asd_add_child($$, $1); asd_add_child($$, $3); }; 
+n2: n2 '*' n1 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("*", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); };
+n2: n2 '/' n1 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("/", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); };
+n2: n2 '%' n1 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("\%", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); }; 
 n2: n1 { $$ = $1; };
 
-n3: n3 '+' n2 { $$ = asd_new("+", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n3: n3 '-' n2 { $$ = asd_new("-", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n3: n3 '+' n2 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("+", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3);
+};
+n3: n3 '-' n2 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("-", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
 n3: n2 { $$ = $1; };
 
-n4: n4 '<' n3 { $$ = asd_new("<", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n4: n4 '>' n3 { $$ = asd_new(">", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n4: n4 TK_OC_LE n3 { $$ = asd_new("<=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n4: n4 TK_OC_GE n3 { $$ = asd_new(">=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n4: n4 '<' n3 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("<", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
+n4: n4 '>' n3 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new(">", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
+n4: n4 TK_OC_LE n3 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("<=", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
+n4: n4 TK_OC_GE n3 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new(">=", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
 n4: n3 { $$ = $1; };
 
-n5: n5 TK_OC_EQ n4 { $$ = asd_new("==", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
-n5: n5 TK_OC_NE n4 { $$ = asd_new("!=", NULL); asd_add_child($$, $1); asd_add_child($$, $3); }; 
+n5: n5 TK_OC_EQ n4 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("==", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
+n5: n5 TK_OC_NE n4 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("!=", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+}; 
 n5: n4 { $$ = $1; };
 
-n6: n6 '&' n5 { $$ = asd_new("&", NULL); asd_add_child($$, $1); asd_add_child($$, $3); };
+n6: n6 '&' n5 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("&", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
 n6: n5 { $$ = $1; };
 
-n7: n7 '|' n6 { $$ = asd_new("|", NULL);  asd_add_child($$, $1); asd_add_child($$, $3); };
+n7: n7 '|' n6 { 
+	compare_type($1->type, $3->type);
+
+	$$ = asd_new("|", NULL, $1->type); 
+	asd_add_child($$, $1); 
+	asd_add_child($$, $3); 
+};
 n7: n6 { $$ = $1; };
 
 expr: n7 { $$ = $1; };
