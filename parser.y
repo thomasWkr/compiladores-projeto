@@ -61,6 +61,7 @@ extern asd_tree_t *arvore;
 %type<no> simple_command
 %type<no> command_seq
 %type<no> command_block
+%type<no> command_block_func
 %type<no> def_func
 %type<no> decl_var
 %type<no> var
@@ -76,20 +77,22 @@ extern asd_tree_t *arvore;
 %define parse.error verbose
 
 %%
-program: {create_scope();} list {destroy_scope();} ';' {arvore = $2;};
+program: {create_scope();} list {destroy_scope(); printf("Fim do escopo Global\n");} ';' {arvore = $2;};
 program: { arvore = NULL; };
 
 type: TK_PR_INT {$$ = asd_new("int", NULL, INT);};
 type: TK_PR_FLOAT {$$ = asd_new("float", NULL, FLOAT);};
 
-literal: TK_LI_INT { 
-	content_t *content= create_content(INT, LITERAL, NULL, $1);
-	update_table(content, $1->lexeme);
+literal: TK_LI_INT {
+	char *key = strdup($1->lexeme);
+	content_t *content= create_content(INT, LITERAL, NULL, create_lexic_value($1->nature, key, $1->line_number));
+	update_table(content, key);
 	$$ = asd_new($1->lexeme, $1, INT); 
 };
 literal: TK_LI_FLOAT { 
-	content_t *content= create_content(FLOAT, LITERAL, NULL, $1);
-	update_table(content, $1->lexeme);
+	char *key = strdup($1->lexeme);
+	content_t *content= create_content(FLOAT, LITERAL, NULL, create_lexic_value($1->nature, key, $1->line_number));
+	update_table(content, key);
 	$$ = asd_new($1->lexeme, $1, FLOAT); 
 };
 
@@ -109,28 +112,36 @@ list: element ',' list {
 }
 
 parameter: TK_ID TK_PR_AS type { 
-	content_t *content= create_content($3->type, ID, NULL, $1);
-	update_table(content, strdup($1->lexeme));
+	char *key = strdup($1->lexeme);
+	content_t *content_p= create_content($3->type, ID, NULL, create_lexic_value($1->nature, key, $1->line_number));
+	update_table(content_p, key);
+	get_latest_function()->content->args = add_arg(get_latest_function()->content->args, $3->type);
 
 	$$ = NULL;
-	free($1->lexeme); 
 	asd_free($3);
 };
 parameter_list: parameter { $$ = $1; }; 
 parameter_list: parameter ',' parameter_list { $$ = $1; };
  
-header: TK_ID TK_PR_RETURNS type TK_PR_IS { 
-	content_t *content= create_content($3->type, FUNCTION, NULL, $1);
-	update_table(content, $1->lexeme);
+header: TK_ID TK_PR_RETURNS type {
+	char *key = strdup($1->lexeme);
+	content_t *content_f= create_content($3->type, FUNCTION, NULL, create_lexic_value($1->nature, key, $1->line_number));
+	update_table(content_f, key);
+	create_scope();} 
+	TK_PR_IS 
+	{
 	$$ = asd_new( $1->lexeme, $1, $3->type); 
 	asd_free($3);
 }; 
-header: TK_ID TK_PR_RETURNS type TK_PR_WITH {create_scope();} parameter_list TK_PR_IS { 
-	content_t *content= create_content($3->type, FUNCTION, NULL, $1);
-	update_table(content, $1->lexeme);
+header: TK_ID TK_PR_RETURNS type TK_PR_WITH {
+	char *key = strdup($1->lexeme);
+	content_t *content_f= create_content($3->type, FUNCTION, NULL, create_lexic_value($1->nature, key, $1->line_number));
+	update_table(content_f, key);
+	create_scope();} 
+	parameter_list TK_PR_IS 
+	{ 
 	$$ = asd_new( $1->lexeme, $1, $3->type); 
 	asd_free($3);
-	free($6);
 };
 
 simple_command: command_block { $$ = $1; }; 
@@ -152,17 +163,21 @@ command_seq: simple_command command_seq {
 	}
 };
 
-command_block: '[' {create_scope();} command_seq {destroy_scope();} ']' { $$ = $3; }; 
+command_block: '[' {create_scope();} command_seq {destroy_scope();printf("Fim do escopo do Bloco\n");} ']' { $$ = $3; }; 
 command_block: '[' ']' { $$ = NULL; };
 
-def_func: header command_block {destroy_scope();} { 
+command_block_func: '[' command_seq ']' { $$ = $2; }; 
+command_block_func: '[' ']' { $$ = NULL; };
+
+def_func: header command_block_func {destroy_scope(); printf("Fim do escopo da Função\n");} { 
 	$$ = $1;
 	if ($2 != NULL) 
 		asd_add_child($1, $2); 
 };
 decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type {
-	content_t *content= create_content($4->type, ID, NULL, $2);
-	update_table(content, strdup($2->lexeme));
+	char *key = strdup($2->lexeme);
+	content_t *content= create_content($4->type, ID, NULL, create_lexic_value($2->nature, key, $2->line_number));
+	update_table(content, key);
 	$$ = asd_new($2->lexeme, $2, $4->type);
 	asd_free($4);
 };
@@ -186,27 +201,46 @@ assign: TK_ID TK_PR_IS expr {
 	asd_add_child($$, $3);
 };
 
-func_call: TK_ID '(' args_list ')' {
-	check_declared($1, $1->lexeme);
-	type_t type_function = get_symbol_from_scope($1->lexeme)->content->type;
+func_call: TK_ID '(' {
+	create_args_list();
+	$1->nature = FUNCTION;
+	check_declared($1, $1->lexeme);} 
+	args_list ')' 
+	{
+	symbol_t *function = get_symbol_from_scope($1->lexeme);
+	compare_args(function->content->args, $1);
+
+	destroy_args_list();
 
 	char name[256];
 	sprintf(name, "call %s", $1->lexeme);
-	$$ = asd_new(name, $1, type_function);
-	asd_add_child($$, $3); 
+	$$ = asd_new(name, $1, function->content->type);
+	asd_add_child($$, $4); 
 };
 
 func_call: TK_ID '(' ')' {
+	$1->nature = FUNCTION;
 	check_declared($1, $1->lexeme);
-	type_t type_function = get_symbol_from_scope($1->lexeme)->content->type;
+	symbol_t *function = get_symbol_from_scope($1->lexeme);
+
+	create_args_list();
+	compare_args(function->content->args, $1);
+	destroy_args_list();
 
 	char name[256];
 	sprintf(name, "call %s", $1->lexeme);
-	$$ = asd_new(name, $1, type_function);
+	$$ = asd_new(name, $1, function->content->type);
 };
 
-args_list: expr ',' args_list { $$ = $1; asd_add_child($$, $3); }; 
-args_list: expr { $$ = $1; };
+args_list: expr ',' args_list { 
+	update_args_list($1->type);
+	$$ = $1; 
+	asd_add_child($$, $3); 
+}; 
+args_list: expr { 
+	update_args_list($1->type);
+	$$ = $1; 
+};
 
 return_call: TK_PR_RETURN expr TK_PR_AS type { 
 	compare_type($2->type, $4->type);
@@ -227,8 +261,19 @@ cond_block: TK_PR_IF '(' expr ')' command_block {
 	if ($5 != NULL) 
 		asd_add_child($$, $5); 
 };
-cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block { 
-	compare_type($5->type, $7->type);
+cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
+	if ($5 && $7){
+		compare_type($5->type, $7->type);
+	} else if ($5 && !$7){
+        // printf("Row: %d, else block is empty", $5->lexic_value->line_number);
+        destroy_scope();
+        exit(ERR_WRONG_TYPE);
+	} else if (!$5 && $7){
+        // printf("Row: %d, if block is empty", $7->lexic_value->line_number);
+        destroy_scope();
+        exit(ERR_WRONG_TYPE);
+	}
+	
 
 	$$ = asd_new("if", NULL, $5->type); 
 	asd_add_child($$, $3);

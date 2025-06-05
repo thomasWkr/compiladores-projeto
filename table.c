@@ -33,13 +33,14 @@ symbol_t *new_table(content_t *content, char *key)
     return sym;
 }
 
-void add_symbol(content_t *content, symbol_t *symbol_table, char *key)
+symbol_t *add_symbol(content_t *content, symbol_t *symbol_table, char *key)
 {
     symbol_t *sym = malloc(sizeof(symbol_t));
     sym->key = key;
     sym->content = content;
     sym->next_symbol = symbol_table;
     symbol_table = sym;
+    return symbol_table;
 }
 
 symbol_t *get_symbol(symbol_t *symbol_table, char *key)
@@ -65,6 +66,10 @@ void free_table(symbol_t *symbol_table)
         {
             if (sym->content->args)
             {
+                if (sym->content->args->args_type)
+                {
+                    free(sym->content->args->args_type);
+                }
                 free(sym->content->args);
             }
 
@@ -78,6 +83,35 @@ void free_table(symbol_t *symbol_table)
         }
         free(sym);
         sym = next;
+    }
+}
+
+parameters_t *add_arg(parameters_t *params_function, type_t arg)
+{
+    parameters_t *params = params_function;
+    if (!params)
+    {
+        params = (parameters_t *)malloc(sizeof(parameters_t));
+        params->params_count = 0;
+        params->args_type = NULL;
+    }
+
+    params->args_type = realloc(params->args_type, (params->params_count + 1) * sizeof(type_t));
+
+    params->args_type[params->params_count] = arg;
+    params->params_count++;
+    return params;
+}
+
+void free_args(parameters_t *args)
+{
+    if (args)
+    {
+        if (args->args_type)
+        {
+            free(args->args_type);
+        }
+        free(args);
     }
 }
 

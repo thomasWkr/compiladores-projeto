@@ -1,17 +1,15 @@
 // Global variable declarations
 declare global_var1 as float,
+declare global_var2 as float,
 
 div_floats returns float with x as float, y as float is[
     // Returns the division of x by y, unless y is zero, then returns 0.0
     if (y != 0.0) [
-        return (x / y) as float
+        return 0.0 as float
     ] else [
         return 0.0 as float
     ]
 ],
-
-// Another global variable
-declare global_var2 as float,
 
 mul_floats returns float with x as float, y as float is[
     // Returns the multiplication of x and y
@@ -28,12 +26,11 @@ main returns float is [
     
     // Increment a by c while a is less than b
     while (a < b) [
-        a is add_floats(a, c) // Return the sum
+        a is div_floats(a, 1.0) // Return the sum
     ]
     
     // If a exceeds b, subtract c to adjust
     if (a > b) [
-        a is sub_floats(a, c)
     ]
     
     // Compute result by dividing a by c
