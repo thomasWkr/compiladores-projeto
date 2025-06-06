@@ -32,6 +32,13 @@ void update_table(content_t *content, char *key)
                 destroy_scope();
                 exit(ERR_DECLARED);
             }
+            else
+            {
+                free(content->data->lexeme);
+                free(content->data);
+                free(content);
+                free(key);
+            }
         }
         else
         {
