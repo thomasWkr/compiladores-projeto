@@ -113,7 +113,7 @@ list: element ',' list {
 
 parameter: TK_ID TK_PR_AS type { 
 	char *key = strdup($1->lexeme);
-	content_t *content_p= create_content($3->type, ID, NULL, create_lexic_value($1->nature, key, $1->line_number));
+	content_t *content_p= create_content($3->type, ID, NULL, $1);
 	update_table(content_p, key);
 	get_latest_function()->content->args = add_arg(get_latest_function()->content->args, $3->type);
 
@@ -183,7 +183,7 @@ decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type {
 };
 
 var: decl_var TK_PR_WITH literal { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 	$$ = asd_new("with", NULL, $1->type); 
 	asd_add_child($$,$3); 
 	asd_add_child($$,$1); 
@@ -193,7 +193,7 @@ var: decl_var { $$ = NULL; asd_free($1);};
 assign: TK_ID TK_PR_IS expr { 
 	check_declared($1, $1->lexeme);
 	type_t type_id = get_symbol_from_scope($1->lexeme)->content->type;
-	compare_type(type_id, $3->type);
+	compare_type(type_id, $3->type, $1->line_number);
 
 	$$ = asd_new("is", NULL, type_id);
 	asd_tree_t *id = asd_new($1->lexeme, $1, type_id); 
@@ -243,9 +243,9 @@ args_list: expr {
 };
 
 return_call: TK_PR_RETURN expr TK_PR_AS type { 
-	compare_type($2->type, $4->type);
+	compare_type($2->type, $4->type, get_line_number());
 	symbol_t *latest_function = get_latest_function();
-	compare_type($2->type, latest_function->content->type);
+	compare_type($2->type, latest_function->content->type, get_line_number());
 
 	$$ = asd_new("return", NULL, $4->type); 
 	asd_add_child($$, $2); 
@@ -256,6 +256,8 @@ flux_controll: cond_block { $$ = $1; };
 flux_controll: iter_block { $$ = $1; };
 
 cond_block: TK_PR_IF '(' expr ')' command_block { 
+	free($1->lexeme);
+	free($1);
 	$$ = asd_new("if", NULL, $3->type); 
 	asd_add_child($$, $3); 
 	if ($5 != NULL) 
@@ -263,17 +265,16 @@ cond_block: TK_PR_IF '(' expr ')' command_block {
 };
 cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 	if ($5 && $7){
-		compare_type($5->type, $7->type);
+		compare_type($5->type, $7->type, get_line_number());
 	} else if ($5 && !$7){
-        // printf("Row: %d, else block is empty", $5->lexic_value->line_number);
+        printf("Row: %d, else block is empty\n", get_line_number());
         destroy_scope();
         exit(ERR_WRONG_TYPE);
 	} else if (!$5 && $7){
-        // printf("Row: %d, if block is empty", $7->lexic_value->line_number);
+        printf("Row: %d, if block is empty\n", get_line_number());
         destroy_scope();
         exit(ERR_WRONG_TYPE);
 	}
-	
 
 	$$ = asd_new("if", NULL, $5->type); 
 	asd_add_child($$, $3);
@@ -315,19 +316,19 @@ n1: '!' n1 {
 n1: n0 { $$ = $1; };
 
 n2: n2 '*' n1 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("*", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); };
 n2: n2 '/' n1 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("/", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); };
 n2: n2 '%' n1 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("\%", NULL, $1->type); 
 	asd_add_child($$, $1); 
@@ -335,14 +336,14 @@ n2: n2 '%' n1 {
 n2: n1 { $$ = $1; };
 
 n3: n3 '+' n2 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("+", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 };
 n3: n3 '-' n2 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("-", NULL, $1->type); 
 	asd_add_child($$, $1); 
@@ -351,28 +352,28 @@ n3: n3 '-' n2 {
 n3: n2 { $$ = $1; };
 
 n4: n4 '<' n3 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("<", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 };
 n4: n4 '>' n3 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new(">", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 };
 n4: n4 TK_OC_LE n3 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("<=", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 };
 n4: n4 TK_OC_GE n3 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new(">=", NULL, $1->type); 
 	asd_add_child($$, $1); 
@@ -381,14 +382,14 @@ n4: n4 TK_OC_GE n3 {
 n4: n3 { $$ = $1; };
 
 n5: n5 TK_OC_EQ n4 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("==", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 };
 n5: n5 TK_OC_NE n4 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("!=", NULL, $1->type); 
 	asd_add_child($$, $1); 
@@ -397,7 +398,7 @@ n5: n5 TK_OC_NE n4 {
 n5: n4 { $$ = $1; };
 
 n6: n6 '&' n5 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("&", NULL, $1->type); 
 	asd_add_child($$, $1); 
@@ -406,7 +407,7 @@ n6: n6 '&' n5 {
 n6: n5 { $$ = $1; };
 
 n7: n7 '|' n6 { 
-	compare_type($1->type, $3->type);
+	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("|", NULL, $1->type); 
 	asd_add_child($$, $1); 

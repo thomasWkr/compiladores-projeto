@@ -61,20 +61,20 @@ void check_declared(value_t *data, char *key)
     {
         if (symbol->content->nature == ID && data->nature == FUNCTION)
         {
-            printf("Row: %d, %s declared as var on line %d and used as function\n", data->line_number, key, symbol->content->data->line_number);
+            printf("Row: %d, '%s' declared as var on line %d and used as function\n", data->line_number, key, symbol->content->data->line_number);
             destroy_scope();
             exit(ERR_VARIABLE);
         }
         else if (symbol->content->nature == FUNCTION && data->nature == ID)
         {
-            printf("Row: %d, %s declared as function on line %d and used as var\n", data->line_number, key, symbol->content->data->line_number);
+            printf("Row: %d, '%s' declared as function on line %d and used as var\n", data->line_number, key, symbol->content->data->line_number);
             destroy_scope();
             exit(ERR_FUNCTION);
         }
     }
     else
     {
-        printf("Row: %d, %s not declared\n", data->line_number, key);
+        printf("Row: %d, '%s' not declared\n", data->line_number, key);
         destroy_scope();
         exit(ERR_UNDECLARED);
     }
@@ -108,14 +108,14 @@ void compare_args(parameters_t *args_function, value_t *data)
 {
     if (!args_function && top_args_stack->args_list)
     {
-        printf("Row: %d, Too many arguments on function call %s\n", data->line_number, data->lexeme);
+        printf("Row: %d, Too many arguments on function call '%s'\n", data->line_number, data->lexeme);
         destroy_args_list();
         destroy_scope();
         exit(ERR_EXCESS_ARGS);
     }
     else if (args_function && !top_args_stack->args_list)
     {
-        printf("Row: %d, Arguments are missing on function call %s\n", data->line_number, data->lexeme);
+        printf("Row: %d, Arguments are missing on function call '%s'\n", data->line_number, data->lexeme);
         destroy_args_list();
         destroy_scope();
         exit(ERR_MISSING_ARGS);
@@ -125,14 +125,14 @@ void compare_args(parameters_t *args_function, value_t *data)
 
         if (top_args_stack->args_list->params_count > args_function->params_count)
         {
-            printf("Row: %d, Too many arguments on function call %s\n", data->line_number, data->lexeme);
+            printf("Row: %d, Too many arguments on function call '%s'\n", data->line_number, data->lexeme);
             destroy_args_list();
             destroy_scope();
             exit(ERR_EXCESS_ARGS);
         }
         else if (top_args_stack->args_list->params_count < args_function->params_count)
         {
-            printf("Row: %d, Arguments are missing on function call %s\n", data->line_number, data->lexeme);
+            printf("Row: %d, Arguments are missing on function call '%s'\n", data->line_number, data->lexeme);
             destroy_args_list();
             destroy_scope();
             exit(ERR_MISSING_ARGS);
@@ -143,7 +143,7 @@ void compare_args(parameters_t *args_function, value_t *data)
             {
                 if (args_function->args_type[i] != top_args_stack->args_list->args_type[i])
                 {
-                    printf("Row: %d, Mismatch of arguments type on function call %s\n", data->line_number, data->lexeme);
+                    printf("Row: %d, Mismatch of arguments type on function call '%s'\n", data->line_number, data->lexeme);
                     destroy_args_list();
                     destroy_scope();
                     exit(ERR_WRONG_TYPE_ARGS);
@@ -153,11 +153,11 @@ void compare_args(parameters_t *args_function, value_t *data)
     }
 }
 
-void compare_type(type_t type1, type_t type2)
+void compare_type(type_t type1, type_t type2, int line_number)
 {
     if (type1 != type2)
     {
-        printf("Row: , type error");
+        printf("Row: %d, type error between '%s' and '%s'\n", line_number, type_to_str(type1), type_to_str(type2));
         destroy_scope();
         exit(ERR_WRONG_TYPE);
     }

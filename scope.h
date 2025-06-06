@@ -29,7 +29,7 @@ void destroy_args_list();
 
 void compare_args(parameters_t *args_function, value_t *data);
 
-void compare_type(type_t type1, type_t type2);
+void compare_type(type_t type1, type_t type2, int line_number);
 
 symbol_t *get_symbol_from_scope(char *key);
 
