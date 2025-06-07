@@ -1,0 +1,3 @@
+func returns int with x as int, x as int is [
+    return x as int
+];

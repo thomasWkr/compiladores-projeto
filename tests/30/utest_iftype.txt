@@ -1,0 +1,12 @@
+y returns float is [
+    declare z as float with 3.41
+    return z as float
+],
+
+x returns int is [
+    if (1) [
+        y()
+    ] else [
+        x()
+    ]
+];

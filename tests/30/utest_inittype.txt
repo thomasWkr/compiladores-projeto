@@ -1,0 +1,3 @@
+x returns int is [
+    declare a as float with 100000  
+]

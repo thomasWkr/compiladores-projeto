@@ -1,0 +1,5 @@
+declare x as int,
+
+undeclared_y returns int is [
+    return x + y
+];

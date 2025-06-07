@@ -1,0 +1,24 @@
+declare a as int,
+declare b as int,
+declare c as int,
+declare x as int,
+declare y as int,
+declare z as int,
+
+func returns int is [
+	a is 5 + a * b - c | func() == 10 > -2 & 13
+	while (x < 1) []
+	if (x < 1) [] else []
+	if (x > 1) []
+	[[[[]]]]
+	func() 
+],
+
+empty_func returns int with x as float, y as int is [],
+
+declare test as int,
+
+working_func returns int with one as int, two as int, three as int, four as int, five as int is[
+	return working_func(x,y,z,2+1, 2*(1-(234))|2) as int
+]
+;
