@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "table.h"
 
+// Alloc a value_t
 value_t *create_lexic_value(nature_t nature, char *lexeme, int line_number)
 {
     value_t *aux = NULL;
@@ -13,6 +14,7 @@ value_t *create_lexic_value(nature_t nature, char *lexeme, int line_number)
     return aux;
 }
 
+// Alloc a value_t
 content_t *create_content(type_t type, nature_t nature, parameters_t *args, value_t *data)
 {
     content_t *aux = NULL;
@@ -86,6 +88,7 @@ void free_table(symbol_t *symbol_table)
     }
 }
 
+// Adds a parameter to the end of a parameter list
 parameters_t *add_arg(parameters_t *params_function, type_t arg)
 {
     parameters_t *params = params_function;

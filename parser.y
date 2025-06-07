@@ -77,7 +77,7 @@ extern asd_tree_t *arvore;
 %define parse.error verbose
 
 %%
-program: {create_scope();} list {destroy_scope(); printf("Fim do escopo Global\n");} ';' {arvore = $2;};
+program: {create_scope();} list {destroy_scope();} ';' {arvore = $2;};
 program: { arvore = NULL; };
 
 type: TK_PR_INT {$$ = asd_new("int", NULL, INT);};
@@ -192,7 +192,7 @@ var: decl_var { $$ = NULL; asd_free($1);};
 
 assign: TK_ID TK_PR_IS expr { 
 	check_declared($1, $1->lexeme);
-	type_t type_id = get_symbol_from_scope($1->lexeme)->content->type;
+	type_t type_id = get_symbol_from_stack($1->lexeme)->content->type;
 	compare_type(type_id, $3->type, $1->line_number);
 
 	$$ = asd_new("is", NULL, type_id);
@@ -207,7 +207,7 @@ func_call: TK_ID '(' {
 	check_declared($1, $1->lexeme);} 
 	args_list ')' 
 	{
-	symbol_t *function = get_symbol_from_scope($1->lexeme);
+	symbol_t *function = get_symbol_from_stack($1->lexeme);
 	compare_args(function->content->args, $1);
 
 	destroy_args_list();
@@ -221,7 +221,7 @@ func_call: TK_ID '(' {
 func_call: TK_ID '(' ')' {
 	$1->nature = FUNCTION;
 	check_declared($1, $1->lexeme);
-	symbol_t *function = get_symbol_from_scope($1->lexeme);
+	symbol_t *function = get_symbol_from_stack($1->lexeme);
 
 	create_args_list();
 	compare_args(function->content->args, $1);
@@ -256,8 +256,6 @@ flux_controll: cond_block { $$ = $1; };
 flux_controll: iter_block { $$ = $1; };
 
 cond_block: TK_PR_IF '(' expr ')' command_block { 
-	free($1->lexeme);
-	free($1);
 	$$ = asd_new("if", NULL, $3->type); 
 	asd_add_child($$, $3); 
 	if ($5 != NULL) 
@@ -266,22 +264,26 @@ cond_block: TK_PR_IF '(' expr ')' command_block {
 cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 	if ($5 && $7){
 		compare_type($5->type, $7->type, get_line_number());
+		$$ = asd_new("if", NULL, $5->type); 
+		asd_add_child($$, $3);
+		asd_add_child($$, $5); 
+		asd_add_child($$, $7);  
 	} else if ($5 && !$7){
         printf("Row: %d, else block is empty\n", get_line_number());
+		asd_free($5);
+		asd_free($3);
         destroy_scope();
         exit(ERR_WRONG_TYPE);
 	} else if (!$5 && $7){
         printf("Row: %d, if block is empty\n", get_line_number());
+		asd_free($7);
+		asd_free($3);
         destroy_scope();
         exit(ERR_WRONG_TYPE);
+	} else {
+		asd_free($3);
+		$$ = NULL;
 	}
-
-	$$ = asd_new("if", NULL, $5->type); 
-	asd_add_child($$, $3);
-	if ($5 != NULL) 
-		asd_add_child($$, $5); 
-	if ($7 != NULL) 
-		asd_add_child($$, $7);  
 };
 
 iter_block: TK_PR_WHILE '(' expr ')' command_block { 
@@ -293,7 +295,7 @@ iter_block: TK_PR_WHILE '(' expr ')' command_block {
 
 n0: TK_ID { 
 	check_declared($1, $1->lexeme);
-	type_t type_id = get_symbol_from_scope($1->lexeme)->content->type;
+	type_t type_id = get_symbol_from_stack($1->lexeme)->content->type;
 
 	$$ = asd_new($1->lexeme, $1, type_id); 
 }; 

@@ -1,3 +1,4 @@
+// ----------------- ENUMS --------------------
 typedef enum
 {
     INT,
@@ -11,6 +12,7 @@ typedef enum
     FUNCTION,
 } nature_t;
 
+// ----------------- STRUCTS ------------------
 typedef struct
 {
     int params_count;
@@ -32,6 +34,7 @@ typedef struct
     value_t *data;
 } content_t;
 
+// Symbol Table struct
 typedef struct symbol_t
 {
     char *key;
@@ -39,7 +42,8 @@ typedef struct symbol_t
     struct symbol_t *next_symbol;
 } symbol_t;
 
-// Functions
+// ---------------- FUNCTIONS -----------------
+
 value_t *create_lexic_value(nature_t nature, char *lexeme, int line_number);
 
 content_t *create_content(type_t type, nature_t nature, parameters_t *args, value_t *data);
