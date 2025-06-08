@@ -30,7 +30,7 @@ void update_table(content_t *content, char *key)
             // If symbol exists -> ERR_DECLARED
             if (content->nature == ID || content->nature == FUNCTION)
             {
-                printf("Row: %d, %s already declared on line %d\n", content->data->line_number, key, symbol->content->data->line_number);
+                printf("Row: %d, '%s' already declared on line %d\n", content->data->line_number, key, symbol->content->data->line_number);
                 destroy_scope();
                 exit(ERR_DECLARED);
             }
@@ -56,7 +56,7 @@ void destroy_scope()
     if (!scope_stack)
         return;
 
-    // Discomment for debugging
+    // Discomment next line for debugging
     // print_scopes();
 
     scope *top = scope_stack;
@@ -93,7 +93,6 @@ void check_declared(value_t *data, char *key)
     }
 }
 
-// New entry for args stack
 void create_args_list()
 {
     args_stack *new_args_list = malloc(sizeof(args_stack));
@@ -167,7 +166,6 @@ void compare_type(type_t type1, type_t type2, int line_number)
     }
 }
 
-// Search for symbol in all scopes
 symbol_t *get_symbol_from_stack(char *key)
 {
     for (scope *current_scope = scope_stack; current_scope != NULL; current_scope = current_scope->next_scope)
@@ -181,11 +179,10 @@ symbol_t *get_symbol_from_stack(char *key)
     return NULL;
 }
 
-// Returns latest symbol in global scope
 symbol_t *get_latest_function()
 {
     scope *function_scope = scope_stack;
-    while (function_scope->next_scope)
+    while (function_scope->next_scope) // Searches for bottom scope
     {
         function_scope = function_scope->next_scope;
     }
