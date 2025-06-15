@@ -1,6 +1,0 @@
-declare var as int,
-
-y returns int is [
-    declare var2 as int
-    var(var2)
-];

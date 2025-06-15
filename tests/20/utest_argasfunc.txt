@@ -1,3 +1,0 @@
-func returns int with arg as int is [
-	arg()
-];

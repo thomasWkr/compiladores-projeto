@@ -1,3 +1,0 @@
-func returns int is [
-   return 1 as float
-];

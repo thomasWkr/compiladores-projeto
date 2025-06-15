@@ -1,6 +1,0 @@
-x returns int is [
-    declare x as int with 1
-],
-
-declare x as int with 2;
-

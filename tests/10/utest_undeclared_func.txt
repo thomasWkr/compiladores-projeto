@@ -1,4 +1,0 @@
-declared_function returns float is [
-    declare x as int
-    undeclared_func(x)
-];

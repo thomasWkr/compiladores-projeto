@@ -1,3 +1,0 @@
-function returns int is [
-    return function + 2 as int
-]

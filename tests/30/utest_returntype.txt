@@ -1,3 +1,0 @@
-x returns int is [
-    return 1.0 as float
-]

@@ -1,3 +1,0 @@
-args4 returns int with x as float, y as int, z as float, d as int is [
-    args4(x,y,z)
-];

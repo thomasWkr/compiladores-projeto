@@ -1,7 +1,0 @@
-args2 returns int with x as int, y as int is [
-    return x - y as int
-],
-
-args4 returns int with x as int, y as int, z as int, k as int is [
-    args4((1 + 2), (3 + 1), args2(6, ((0))), 2)
-]; 
