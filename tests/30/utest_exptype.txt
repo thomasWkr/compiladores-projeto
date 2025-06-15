@@ -1,0 +1,3 @@
+x returns int is [
+    return 1 + 2.0
+]

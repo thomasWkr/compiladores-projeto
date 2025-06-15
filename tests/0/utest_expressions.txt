@@ -1,0 +1,33 @@
+declare a as int, declare b as int, declare c as float, declare d as float,
+
+my_function returns int is [
+    a is 5 + 3
+    b is a - 2
+    c is 1.0 * 4.5
+    d is c / 2.0
+    a is a % 3
+    b is a & b
+    c is c | d
+
+    d is (d + d) * (d  + c) + (d + d)
+    d is -(c - d)
+    a is !!!!!-+--b
+
+    c is ((d + c) * (c - d) / 2.0) + ((d % c) & (c | c))
+    d is (c * d) + (d / c) - (c % c) & (d | d)
+    b is (((a + 2) * (b - 1)) / (a + 3)) % 4
+
+    d is (((c * 3.0) - (d / 2.1)) + ((c % .2) & d)) | ((d + d) - (c * d))
+
+    if (a == b) [
+        c is 1000.0 * d
+    ] else [
+        d is d - c
+    ]
+
+    while (a < 50) [
+        a is a + 1
+    ]
+
+    return (((a + b) * (a * b))) as int 
+];

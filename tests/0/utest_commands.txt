@@ -7,7 +7,6 @@ sub_floats returns float with x as float,y as float is[
 ],
 
 main returns float is [
-    [[[]]]
     declare x as float with 1.0
     [
         declare y as float with 2.0
@@ -19,16 +18,10 @@ main returns float is [
                 return z as float
             ]
         ]
-        while (((x) / (y)) > 0)[
+        while (((x) / (y)) > .0)[
             x is (x - 1.0)
         ]
     ]
     [[[]]]
-    [[[]]]
-    return sub_floats(y,x) as float
-],
-declare zero as int,
-main returns float is [
-    if (x >= 1.0)[]
-    else []
+    return sub_floats(x,x) as float
 ];
