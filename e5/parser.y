@@ -286,18 +286,10 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 		compare_type($5->type, $7->type, get_line_number());
 		asd_add_child($$, $5); 
 		asd_add_child($$, $7);  
-	} else if ($5 && !$7){ // If 'else' block is NULL -> Type Error
-        printf("Row: %d, else block is empty\n", get_line_number());
-		asd_free($5);
-		asd_free($3);
-        destroy_scope();
-        exit(ERR_WRONG_TYPE);
-	} else if (!$5 && $7){ // If 'if' block is NULL -> Type Error
-        printf("Row: %d, if block is empty\n", get_line_number());
-		asd_free($7);
-		asd_free($3);
-        destroy_scope();
-        exit(ERR_WRONG_TYPE);
+	} else if ($5){ // If 'else' block is NULL -> do nothing
+		asd_add_child($$, $5); 
+	} else if ($7){ // If 'if' block is NULL -> do nothing
+		asd_add_child($$, $7); 
 	} 
 };
 
