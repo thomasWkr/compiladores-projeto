@@ -1,0 +1,10 @@
+loadI 1024 => rfp
+loadI 1024 => rsp
+loadI 11 => rbss
+jumpI => L0
+L0: addI rsp, 4 => rsp
+loadI 59 => r0
+storeAI r0 => rbss, 0
+loadI 33 => r0
+storeAI r0 => rfp, 0
+halt

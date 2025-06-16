@@ -1,0 +1,23 @@
+loadI 1024 => rfp
+loadI 1024 => rsp
+loadI 23 => rbss
+jumpI => L1
+L0: i2i rsp => rfp
+addI rsp, 16 => rsp   //final do prólogo
+loadI 73 => r0      //seq retorno
+storeAI r0 => rfp, 12
+loadAI rfp, 0 => r0  //obtém end. retorno
+loadAI rfp, 4 => r1  //obtém rsp salvo
+loadAI rfp, 8 => r2  //obtém rfp salvo
+i2i r1 => rsp
+i2i r2 => rfp
+jump => r0
+L1: addI rsp, 4 => rsp
+loadI 20 => r3
+storeAI r3 => rsp, 0
+storeAI rsp => rsp, 4
+storeAI rfp => rsp, 8
+jumpI => L0
+loadAI rsp, 12 => r0
+storeAI r0 => rfp, 0
+halt

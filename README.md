@@ -58,3 +58,9 @@ You can also create a PNG of the code Syntax Tree:
 make
 ./etapa4 < tests/test_file.txt
 ```
+
+### E5
+
+```
+python3 ilocsim.py -x -t -s --data 500 --stack 1024 tests/exemplo1.iloc
+```
