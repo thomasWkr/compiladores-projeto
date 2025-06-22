@@ -20,9 +20,14 @@ typedef struct asd_tree
 asd_tree_t *asd_new(const char *label, value_t *lexic_value, type_t type);
 
 /*
- * Função asd_add_code, adiciona o código referente a esse nodo.
+ * Função asd_add_code, adiciona o código e o temporário do nodo.
  */
 void asd_add_code(asd_tree_t *tree, char *code, char *temp);
+
+/*
+ * Função asd_copy_code, copia o código e o temporário dos nodos abaixo.
+ */
+void asd_copy_code(asd_tree_t *tree, CodeNode **code, char **temp);
 
 /*
  * Função asd_tree, libera recursivamente o nó e seus filhos.

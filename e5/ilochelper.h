@@ -1,11 +1,13 @@
 #ifndef ILOC_HELPER_H
 #define ILOC_HELPER_H
 
+#define MAX_NAME_LEN 128
+
 //
 void init_counters();
 
 //
-const char *next_temp();
+char *next_temp();
 
 //
 const char *next_label();

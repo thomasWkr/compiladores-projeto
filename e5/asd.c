@@ -25,8 +25,29 @@ void asd_add_code(asd_tree_t *tree, char *code, char *temp)
 {
   if (tree != NULL && code != NULL)
   {
-    tree->temp = temp;
+    if (temp)
+    {
+      tree->temp = temp;
+    }
     append(&tree->code, code);
+  }
+  else
+  {
+    printf("Erro: %s recebeu parâmetro tree = %p / %p.\n", __FUNCTION__, tree, code);
+  }
+}
+
+void asd_copy_code(asd_tree_t *tree, CodeNode **code, char **temp)
+{
+  if (tree != NULL && code != NULL)
+  {
+    if (temp)
+    {
+      tree->temp = *temp;
+      *temp = NULL;
+    }
+
+    concat_lists(&tree->code, code);
   }
   else
   {
@@ -47,6 +68,14 @@ void asd_free(asd_tree_t *tree)
     {
       free(tree->lexic_value->lexeme);
       free(tree->lexic_value);
+    }
+    if (tree->temp != NULL)
+    {
+      // free(tree->temp);
+    }
+    if (tree->code != NULL)
+    {
+      free_list(&tree->code);
     }
     free(tree->children);
     free(tree->label);

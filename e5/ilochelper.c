@@ -3,8 +3,6 @@
 #include <string.h>
 #include "ilochelper.h"
 
-#define MAX_NAME_LEN 32
-
 static int temp_counter = 0;
 static int label_counter = 0;
 
@@ -14,7 +12,7 @@ void init_counters()
     label_counter = 0;
 }
 
-const char *next_temp()
+char *next_temp()
 {
     static char buffer[MAX_NAME_LEN];
     snprintf(buffer, MAX_NAME_LEN, "t%d", temp_counter++);
@@ -28,16 +26,15 @@ const char *next_label()
     return buffer;
 }
 
-// char* code = generate_aritmetic_code("add", "r1", "r2", "r3")
 char *generate_iloc_individual_code(const char *iloc_operation, const char *oper1, const char *oper2, const char *dest1, const char *dest2)
 {
+    static char buffer[MAX_NAME_LEN];
     if (strcmp(iloc_operation, "nop") == 0)
     {
-        return iloc_operation;
+        snprintf(buffer, MAX_NAME_LEN, "nop");
     }
     else
     {
-        static char buffer[MAX_NAME_LEN];
         if (oper2 && dest2)
         {
             snprintf(buffer, MAX_NAME_LEN, "%s %s, %s => %s, %s", iloc_operation, oper1, oper2, dest1, dest2);

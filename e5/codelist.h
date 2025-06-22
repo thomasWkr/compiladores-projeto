@@ -19,15 +19,18 @@ static inline void init_list(CodeNode **head)
 }
 
 // Append a string to the list
-void append(CodeNode **head, const char *str);
+void append(CodeNode **head, char *str);
 
 // Print the list
-void print_list(const CodeNode *head);
+void print_list(CodeNode *head);
 
 // Free the list
 void free_list(CodeNode **head);
 
 // Concatenate two lists: list_a = list_a + list_b, list_b becomes empty
 void concat_lists(CodeNode **list_a, CodeNode **list_b);
+
+//
+void add_label(CodeNode **head, const char *label);
 
 #endif

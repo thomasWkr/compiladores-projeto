@@ -38,12 +38,12 @@ void update_table(content_t *content, char *key, int symbol_size)
     {
         if (content->nature == ID)
         {
-            scope_stack->symbol_table = new_table(content, key, scope_stack->current_offset);
+            scope_stack->symbol_table = new_table(content, key, scope_stack->current_offset, scope_stack->type);
             scope_stack->current_offset += symbol_size;
         }
         else
         {
-            scope_stack->symbol_table = new_table(content, key, -1);
+            scope_stack->symbol_table = new_table(content, key, -1, scope_stack->type);
         }
     }
     else
@@ -72,12 +72,12 @@ void update_table(content_t *content, char *key, int symbol_size)
         {
             if (content->nature == ID)
             {
-                scope_stack->symbol_table = add_symbol(content, scope_stack->symbol_table, key, scope_stack->current_offset);
+                scope_stack->symbol_table = add_symbol(content, scope_stack->symbol_table, key, scope_stack->current_offset, scope_stack->type);
                 scope_stack->current_offset += symbol_size;
             }
             else
             {
-                scope_stack->symbol_table = add_symbol(content, scope_stack->symbol_table, key, -1);
+                scope_stack->symbol_table = add_symbol(content, scope_stack->symbol_table, key, -1, scope_stack->type);
             }
         }
     }
@@ -94,7 +94,7 @@ void destroy_scope()
     }
 
     // Discomment next line for debugging
-    print_scopes();
+    // print_scopes();
 
     scope *top = scope_stack;
     scope_stack = scope_stack->next_scope;
@@ -221,19 +221,6 @@ symbol_t *get_symbol_from_stack(char *key)
     return NULL;
 }
 
-scope_type get_scope_type(char *key)
-{
-    for (scope *current_scope = scope_stack; current_scope != NULL; current_scope = current_scope->next_scope)
-    {
-        symbol_t *symbol = get_symbol(current_scope->symbol_table, key);
-        if (symbol)
-        {
-            return current_scope->type;
-        }
-    }
-    return NULL;
-}
-
 symbol_t *get_latest_function()
 {
     scope *function_scope = scope_stack;
@@ -257,6 +244,7 @@ void print_scopes()
             content_t *content = symbol_table->content;
             printf("Key: %s\n", symbol_table->key);
             printf("Offset: %d\n", symbol_table->offset);
+            printf("Scope: %d\n", symbol_table->scope_type);
 
             if (content)
             {

@@ -12,6 +12,13 @@ typedef enum
     FUNCTION,
 } nature_t;
 
+typedef enum
+{
+    GLOBAL,
+    FUNCTION_BLOCK,
+    COMMAND_BLOCK,
+} scope_type;
+
 // ----------------- STRUCTS ------------------
 typedef struct
 {
@@ -40,6 +47,7 @@ typedef struct symbol_t
     char *key;
     content_t *content;
     int offset;
+    scope_type scope_type;
     struct symbol_t *next_symbol;
 } symbol_t;
 
@@ -52,10 +60,10 @@ value_t *create_lexic_value(nature_t nature, char *lexeme, int line_number);
 content_t *create_content(type_t type, nature_t nature, parameters_t *args, value_t *data);
 
 // Creates a new Symbol Table
-symbol_t *new_table(content_t *content, char *key, int offset);
+symbol_t *new_table(content_t *content, char *key, int offset, scope_type scope_type);
 
 // Adds a symbol to a Symbol Table
-symbol_t *add_symbol(content_t *content, symbol_t *previous_symbol, char *key, int offset);
+symbol_t *add_symbol(content_t *content, symbol_t *previous_symbol, char *key, int offset, scope_type scope_type);
 
 // Returns a symbol from a Symbol Table
 symbol_t *get_symbol(symbol_t *first_symbol, char *key);

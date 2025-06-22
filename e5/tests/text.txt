@@ -6,7 +6,7 @@ my_function returns int is [
   declare ablubluble as int
 
   if (a == b) [
-      declare atututu as int
+      declare atututu as int with 5
       [
         declare gataca as int
       ]
