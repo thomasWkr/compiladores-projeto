@@ -1,0 +1,30 @@
+declare a as int, declare b as int, declare c as float, declare d as float,
+
+my_function returns int is [
+    a is - ! 5 + 4 - (3 - 6) * 4 == 5 >= func (x) | x & y
+    b is a - 2
+    c is b * 4.5
+    d is c / 2.0
+    a is a % 3
+    b is a & b
+    c is c | d
+
+    d is -(a + b) * !(c - d)
+    a is !!!!!-+--b
+
+    c is ((a + b) * (c - d) / 2.0) + ((d % a) & (b | c))
+    d is (a * b) + (c / d) - (a % b) & (c | d)
+    b is (((a + 2) * (c - 1)) / (d + 3)) % 4
+
+    d is (((a * 3) - (b / 2)) + ((c % 4) & d)) | ((a + b) - (c * d))
+
+    if (a == b) [
+        c is a + d
+    ] else [
+        d is b - c
+    ]
+
+    while (a < 50) [
+        a is a + 1
+    ]
+];

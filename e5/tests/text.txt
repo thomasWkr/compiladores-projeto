@@ -4,17 +4,20 @@ my_function returns int is [
   a is 5 + 3 
   b is a - 2 
   declare ablubluble as int
-
+  ablubluble is 4
   if (a == b) [
-      declare atututu as int with 5
+      declare atututu as int //with 5
       [
         declare gataca as int
       ]
       declare tiririca as int
   ] else [
-      declare abububu as int
+      declare abububu as int with 3
   ]
 
+  while (a != b)[
+    a is a - 1
+  ]
 
   return (((a + b) * (a * b))) as int 
 ];

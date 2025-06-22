@@ -14,14 +14,14 @@ void init_counters()
 
 char *next_temp()
 {
-    static char buffer[MAX_NAME_LEN];
-    snprintf(buffer, MAX_NAME_LEN, "t%d", temp_counter++);
+    char *buffer = malloc(MAX_NAME_LEN);
+    snprintf(buffer, MAX_NAME_LEN, "r%d", temp_counter++);
     return buffer;
 }
 
 const char *next_label()
 {
-    static char buffer[MAX_NAME_LEN];
+    char *buffer = malloc(MAX_NAME_LEN);
     snprintf(buffer, MAX_NAME_LEN, "L%d", label_counter++);
     return buffer;
 }

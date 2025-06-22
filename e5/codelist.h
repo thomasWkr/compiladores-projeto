@@ -30,7 +30,7 @@ void free_list(CodeNode **head);
 // Concatenate two lists: list_a = list_a + list_b, list_b becomes empty
 void concat_lists(CodeNode **list_a, CodeNode **list_b);
 
-//
+// Adds the labe to the instruction on top
 void add_label(CodeNode **head, const char *label);
 
 #endif

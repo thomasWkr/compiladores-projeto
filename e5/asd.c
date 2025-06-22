@@ -71,7 +71,7 @@ void asd_free(asd_tree_t *tree)
     }
     if (tree->temp != NULL)
     {
-      // free(tree->temp);
+      free(tree->temp);
     }
     if (tree->code != NULL)
     {

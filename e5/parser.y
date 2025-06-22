@@ -320,28 +320,102 @@ cond_block: TK_PR_IF '(' expr ')' command_block {
 
 		snprintf(code, MAX_NAME_LEN, "%s: nop", label_false);
 		asd_add_code($$, code, NULL);
+		free((void*)label_true);
+		free((void*)label_false);
 	}
 };
 cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 	$$ = asd_new("if", NULL, $3->type); 
 	asd_add_child($$, $3);
 
+ 	asd_copy_code($$, &$3->code, NULL);
+	const char *label_true = next_label();
+	const char *label_false = next_label();
+	
 	if ($5 && $7){ // If both blocks aren't NULL, compares their types and adds to tree
 		compare_type($5->type, $7->type, get_line_number());
-		asd_add_child($$, $5); 
-		asd_add_child($$, $7);  
+		asd_add_child($$, $5);
+		asd_add_child($$, $7);
+		
+		const char *else_end = next_label();
+
+		add_label(&$5->code, label_true);
+		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		asd_add_code($$, code, NULL);
+		asd_copy_code($$, &$5->code, NULL);
+
+		code = generate_iloc_flux_code("jumpI", NULL, NULL, else_end, NULL);
+		asd_add_code($$, code, NULL);
+
+		add_label(&$7->code, label_false);
+		asd_copy_code($$, &$7->code, NULL);
+
+		snprintf(code, MAX_NAME_LEN, "%s: nop", else_end);
+		asd_add_code($$, code, NULL);
+
+		free((void*)else_end);
 	} else if ($5){ // If 'else' block is NULL -> do nothing
-		asd_add_child($$, $5); 
+		asd_add_child($$, $5);
+
+		add_label(&$5->code, label_true);
+		
+		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		asd_add_code($$, code, NULL);
+		asd_copy_code($$, &$5->code, NULL);
+		snprintf(code, MAX_NAME_LEN, "%s: nop", label_false);
+		
+		asd_add_code($$, code, NULL);
+		
 	} else if ($7){ // If 'if' block is NULL -> do nothing
 		asd_add_child($$, $7); 
+		
+		const char *else_end = next_label();
+		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		asd_add_code($$, code, NULL);
+
+		add_label(&$7->code, label_false);
+		asd_copy_code($$, &$7->code, NULL);
+
+		snprintf(code, MAX_NAME_LEN, "%s: nop", label_true);
+		asd_add_code($$, code, NULL);
+
+		free((void*)else_end);
 	} 
+
+	free((void*)label_true);
+	free((void*)label_false);
 };
 
 iter_block: TK_PR_WHILE '(' expr ')' command_block { 
 	$$ = asd_new("while", NULL, $3->type); 
 	asd_add_child($$, $3); 
-	if ($5 != NULL) 
+
+ 	asd_copy_code($$, &$3->code, NULL);
+
+	if ($5 != NULL) {
 		asd_add_child($$, $5); 
+
+		const char *label_expr = next_label();
+		const char *label_true = next_label();
+		const char *label_false = next_label();
+
+		add_label(&$$->code, label_expr);
+		add_label(&$5->code, label_true);
+
+		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		asd_add_code($$, code, NULL);
+		asd_copy_code($$, &$5->code, NULL);
+
+		code = generate_iloc_flux_code("jumpI", NULL, NULL, label_expr, NULL);
+		asd_add_code($$, code, NULL);
+
+		snprintf(code, MAX_NAME_LEN, "%s: nop", label_false);
+		asd_add_code($$, code, NULL);
+		
+		free((void*)label_expr);
+		free((void*)label_true);
+		free((void*)label_false);
+	}
 };
 
 // =========================== EXPRESSIONS ============================
@@ -409,6 +483,7 @@ n2: n2 '*' n1 {
 	$$ = asd_new("*", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
+
 	
 	char *temp = next_temp();
 	asd_copy_code($1, &$3->code, NULL);
@@ -449,6 +524,7 @@ n3: n3 '+' n2 {
 	char *temp = next_temp();
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
+
 	char* code = generate_iloc_individual_code("add", $1->temp, $3->temp, temp, NULL);
 	asd_add_code($$, code, temp);
 };
@@ -462,6 +538,7 @@ n3: n3 '-' n2 {
 	char *temp = next_temp();
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
+
 	char* code = generate_iloc_individual_code("sub", $1->temp, $3->temp, temp, NULL);
 	asd_add_code($$, code, temp);
 };

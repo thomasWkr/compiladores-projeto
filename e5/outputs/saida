@@ -1,9 +1,0 @@
-loadI 5 => t0
-loadI 3 => t1
-add t2, t2 => t2
-storeAI t2 => rbss, 0
-loadAI rbss, 0 => t3
-loadI 2 => t4
-sub t5, t5 => t5
-storeAI t5 => rbss, 4
-halt
