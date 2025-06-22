@@ -14,8 +14,24 @@ asd_tree_t *asd_new(const char *label, value_t *lexic_value, type_t type)
     ret->children = NULL;
     ret->lexic_value = lexic_value;
     ret->type = type;
+
+    ret->code = NULL;
+    ret->temp = NULL;
   }
   return ret;
+}
+
+void asd_add_code(asd_tree_t *tree, char *code, char *temp)
+{
+  if (tree != NULL && code != NULL)
+  {
+    tree->temp = temp;
+    append(&tree->code, code);
+  }
+  else
+  {
+    printf("Erro: %s recebeu parâmetro tree = %p / %p.\n", __FUNCTION__, tree, code);
+  }
 }
 
 void asd_free(asd_tree_t *tree)

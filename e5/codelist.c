@@ -1,44 +1,36 @@
+#include "codelist.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "linkedlist.h"
 
-void init_list(LinkedList *list)
+void append(CodeNode **head, const char *str)
 {
-    list->head = NULL;
-}
-
-void append(LinkedList *list, const char *str)
-{
-    CodeNode *new_node = (CodeNode *)malloc(sizeof(CodeNode));
+    CodeNode *new_node = malloc(sizeof(CodeNode));
     if (!new_node)
     {
         perror("Erro ao alocar memória");
         exit(EXIT_FAILURE);
     }
-
     strncpy(new_node->code, str, MAX_STR_LEN - 1);
     new_node->code[MAX_STR_LEN - 1] = '\0';
     new_node->next = NULL;
 
-    if (!list->head)
+    if (!*head)
     {
-        list->head = new_node;
+        *head = new_node;
     }
     else
     {
-        CodeNode *current = list->head;
+        CodeNode *current = *head;
         while (current->next)
-        {
             current = current->next;
-        }
         current->next = new_node;
     }
 }
 
-void print_list(const LinkedList *list)
+void print_list(const CodeNode *head)
 {
-    CodeNode *current = list->head;
+    const CodeNode *current = head;
     while (current)
     {
         printf("%s -> ", current->code);
@@ -47,38 +39,32 @@ void print_list(const LinkedList *list)
     printf("NULL\n");
 }
 
-void free_list(LinkedList *list)
+void free_list(CodeNode **head)
 {
-    CodeNode *current = list->head;
+    CodeNode *current = *head;
     while (current)
     {
         CodeNode *temp = current;
         current = current->next;
         free(temp);
     }
-    list->head = NULL;
+    *head = NULL;
 }
 
-void concat_lists(LinkedList *lista_a, LinkedList *lista_b)
+void concat_lists(CodeNode **list_a, CodeNode **list_b)
 {
-    if (!lista_b->head)
-    {
+    if (!*list_b)
         return;
-    }
-
-    if (!lista_a->head)
+    if (!*list_a)
     {
-        lista_a->head = lista_b->head;
+        *list_a = *list_b;
     }
     else
     {
-        CodeNode *current = lista_a->head;
+        CodeNode *current = *list_a;
         while (current->next)
-        {
             current = current->next;
-        }
-        current->next = lista_b->head;
+        current->next = *list_b;
     }
-
-    lista_b->head = NULL;
+    *list_b = NULL;
 }

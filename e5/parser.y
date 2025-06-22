@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "asd.h"
 
+#define GOD_SIZE 4
+
 int yylex(void);
 void yyerror (char const *mensagem);
 int get_line_number(void);
@@ -80,7 +82,7 @@ extern asd_tree_t *arvore;
 
 // ============================= GENERAL ==============================
 
-program: {create_scope();} list {destroy_scope();} ';' {arvore = $2;};
+program: {create_scope(GLOBAL);} list {destroy_scope();} ';' {arvore = $2;};
 program: { arvore = NULL; };
 
 // Adds type declaration to the tree
@@ -90,13 +92,19 @@ type: TK_PR_FLOAT {$$ = asd_new("float", NULL, FLOAT);};
 literal: TK_LI_INT {
 	char *key = strdup($1->lexeme);
 	content_t *content= create_content(INT, LITERAL, NULL, create_lexic_value($1->nature, key, $1->line_number));
-	update_table(content, key);
+	update_table(content, key, GOD_SIZE);
 	$$ = asd_new($1->lexeme, $1, INT); 
+
+	char *temp = next_temp();
+	char lit[32];
+	sprintf(lit, "%d", $1->lexeme); 
+	char* code = generate_iloc_individual_code("loadI", lit, NULL, temp, NULL);
+	append(&$$->code, code);
 };
 literal: TK_LI_FLOAT { 
 	char *key = strdup($1->lexeme);
 	content_t *content= create_content(FLOAT, LITERAL, NULL, create_lexic_value($1->nature, key, $1->line_number));
-	update_table(content, key);
+	update_table(content, key, GOD_SIZE);
 	$$ = asd_new($1->lexeme, $1, FLOAT); 
 };
 
@@ -136,7 +144,7 @@ command_seq: simple_command command_seq {
 	}
 };
 
-command_block: '[' {create_scope();} command_seq {destroy_scope();} ']' { $$ = $3; }; 
+command_block: '[' {create_scope( COMMAND_BLOCK );} command_seq {destroy_scope();} ']' { $$ = $3; }; 
 command_block: '[' ']' { $$ = NULL; };
 
 command_block_func: '[' command_seq ']' { $$ = $2; }; // Function command block doesnt create scope
@@ -147,7 +155,7 @@ command_block_func: '[' ']' { $$ = NULL; };
 parameter: TK_ID TK_PR_AS type { 
 	char *key = strdup($1->lexeme);
 	content_t *content_p= create_content($3->type, ID, NULL, $1); 
-	update_table(content_p, key); // Adds parameter to Symbol Table
+	update_table(content_p, key, GOD_SIZE); // Adds parameter to Symbol Table
 	get_latest_function()->content->args = add_arg(
 		get_latest_function()->content->args, $3->type); // Adds parameter to latest function list 
 
@@ -161,8 +169,8 @@ header: TK_ID TK_PR_RETURNS type {
 	char *key = strdup($1->lexeme);
 	content_t *content_f= create_content(
 		$3->type, FUNCTION, NULL, create_lexic_value($1->nature, key, $1->line_number));
-	update_table(content_f, key); // Adds function to symbol table
-	create_scope();} 
+	update_table(content_f, key, GOD_SIZE); // Adds function to symbol table
+	create_scope(FUNCTION_BLOCK);} 
 	TK_PR_IS 
 	{
 	$$ = asd_new( $1->lexeme, $1, $3->type); 
@@ -171,8 +179,8 @@ header: TK_ID TK_PR_RETURNS type {
 header: TK_ID TK_PR_RETURNS type TK_PR_WITH {
 	char *key = strdup($1->lexeme);
 	content_t *content_f= create_content($3->type, FUNCTION, NULL, create_lexic_value($1->nature, key, $1->line_number));
-	update_table(content_f, key); // Adds function to symbol table
-	create_scope();} 
+	update_table(content_f, key, GOD_SIZE); // Adds function to symbol table
+	create_scope(FUNCTION_BLOCK);} 
 	parameter_list TK_PR_IS 
 	{ 
 	$$ = asd_new( $1->lexeme, $1, $3->type); 
@@ -201,7 +209,7 @@ decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type {
 	char *key = strdup($2->lexeme);
 	content_t *content= create_content(
 		$4->type, ID, NULL, create_lexic_value($2->nature, key, $2->line_number));
-	update_table(content, key); // Adds var to symbol table
+	update_table(content, key, GOD_SIZE); // Adds var to symbol table
 	$$ = asd_new($2->lexeme, $2, $4->type);
 	asd_free($4);
 };
@@ -302,29 +310,63 @@ iter_block: TK_PR_WHILE '(' expr ')' command_block {
 
 // =========================== EXPRESSIONS ============================
 
-// TO-DO
-// - generalizar o codigo das expressões
 n0: TK_ID { 
 	check_declared($1, $1->lexeme);
-	type_t type_id = get_symbol_from_stack($1->lexeme)->content->type;
+	symbol_t sym = get_symbol_from_stack($1->lexeme)
+	type_t type_id = sym->content->type;
+	
+	$$ = asd_new($1->lexeme, $1, type_id);
 
-	$$ = asd_new($1->lexeme, $1, type_id); 
+	char offset[32];
+	sprintf(offset, "%d", sym->offset); 
+
+	char *temp = next_temp();
+	char* reg = get_scope() == GLOBAL ? "rbss" : "rfp";
+	char* code = generate_iloc_individual_code("loadAI" , reg, offset, temp, NULL);
+	append(&$$->code, code);
 }; 
-n0: literal { $$ = $1; };
+n0: literal { 
+	$$ = $1;
+};
 n0: func_call { $$ = $1; };
 n0: '(' expr ')' { $$ = $2; };
 
 n1: '+' n1 { 
 	$$ = asd_new("+", NULL, $2->type); 
 	asd_add_child($$, $2); 
+	$$->code = $2->code;
+	$$->temp = $2->temp;
 };
 n1: '-' n1 { 
 	$$ = asd_new("-", NULL, $2->type); 
 	asd_add_child($$, $2); 
+	
+	$$->code = $2->code;
+	char *temp = next_temp();
+	char *zero_temp = next_temp();
+
+	char* code = generate_iloc_individual_code("loadI", "0", NULL, zero_temp, NULL);
+ 	append(&$$->code, code); 
+	code = generate_iloc_individual_code("sub", zero_temp, $2->temp, temp, NULL);
+ 	append(&$$->code, code); 
 };
 n1: '!' n1 { 
 	$$ = asd_new("!", NULL, $2->type); 
-	asd_add_child($$, $2); 
+	asd_add_child($$, $2);
+	
+	$$->code = $2->code;
+	
+
+	char *temp = next_temp();
+	char *zero_temp = next_temp();
+
+	// (cmp_eq 0, temp => temp) <=> !temp
+	char* zero_code = generate_iloc_individual_code("loadI", "0", NULL, zero_temp, NULL);
+ 	append(&$$->code, code); 
+	char* code = generate_iloc_individual_code("cmp_EQ", zero_temp, $2->temp, temp, NULL);
+ 	append(&$$->code, code);
+
+	$$->temp = temp; 
 };
 n1: n0 { $$ = $1; };
 
@@ -333,19 +375,35 @@ n2: n2 '*' n1 {
 
 	$$ = asd_new("*", NULL, $1->type); 
 	asd_add_child($$, $1); 
-	asd_add_child($$, $3); };
+	asd_add_child($$, $3);
+	
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp);
+	char* code = generate_iloc_individual_code("mult", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);
+};
 n2: n2 '/' n1 { 
 	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("/", NULL, $1->type); 
 	asd_add_child($$, $1); 
-	asd_add_child($$, $3); };
+	asd_add_child($$, $3);
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp);
+	char* code = generate_iloc_individual_code("div", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);
+};
 n2: n2 '%' n1 { 
+	//CODE NOT IMPLEMENTED
 	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("\%", NULL, $1->type); 
 	asd_add_child($$, $1); 
-	asd_add_child($$, $3); }; 
+	asd_add_child($$, $3); 
+}; 
 n2: n1 { $$ = $1; };
 
 n3: n3 '+' n2 { 
@@ -354,6 +412,12 @@ n3: n3 '+' n2 {
 	$$ = asd_new("+", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp);
+	char* code = generate_iloc_individual_code("add", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);
 };
 n3: n3 '-' n2 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -361,6 +425,12 @@ n3: n3 '-' n2 {
 	$$ = asd_new("-", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp);
+	char* code = generate_iloc_individual_code("sub", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);
 };
 n3: n2 { $$ = $1; };
 
@@ -369,14 +439,26 @@ n4: n4 '<' n3 {
 
 	$$ = asd_new("<", NULL, $1->type); 
 	asd_add_child($$, $1); 
-	asd_add_child($$, $3); 
+	asd_add_child($$, $3);
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp);
+	char* code = generate_iloc_individual_code("cmp_LT", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);
 };
 n4: n4 '>' n3 { 
 	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new(">", NULL, $1->type); 
 	asd_add_child($$, $1); 
-	asd_add_child($$, $3); 
+	asd_add_child($$, $3);
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp); 
+	char* code = generate_iloc_individual_code("cmp_GT", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);  
 };
 n4: n4 TK_OC_LE n3 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -384,6 +466,12 @@ n4: n4 TK_OC_LE n3 {
 	$$ = asd_new("<=", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp); 
+	char* code = generate_iloc_individual_code("cmp_LE", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);  
 };
 n4: n4 TK_OC_GE n3 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -391,6 +479,12 @@ n4: n4 TK_OC_GE n3 {
 	$$ = asd_new(">=", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp); 
+	char* code = generate_iloc_individual_code("cmp_GE", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code); 
 };
 n4: n3 { $$ = $1; };
 
@@ -399,7 +493,13 @@ n5: n5 TK_OC_EQ n4 {
 
 	$$ = asd_new("==", NULL, $1->type); 
 	asd_add_child($$, $1); 
-	asd_add_child($$, $3); 
+	asd_add_child($$, $3);
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp); 
+	char* code = generate_iloc_individual_code("cmp_EQ", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);  
 };
 n5: n5 TK_OC_NE n4 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -407,6 +507,12 @@ n5: n5 TK_OC_NE n4 {
 	$$ = asd_new("!=", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp); 
+	char* code = generate_iloc_individual_code("cmp_NE", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code);  
 }; 
 n5: n4 { $$ = $1; };
 
@@ -416,6 +522,12 @@ n6: n6 '&' n5 {
 	$$ = asd_new("&", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp); 
+	char* code = generate_iloc_individual_code("and", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code); 
 };
 n6: n5 { $$ = $1; };
 
@@ -425,6 +537,12 @@ n7: n7 '|' n6 {
 	$$ = asd_new("|", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
+
+	char *temp = next_temp();
+ 	concat_list(&$1->code,&$3->code);
+	asd_add_code($$, $1->code, temp); 
+	char* code = generate_iloc_individual_code("or", $1->temp, $3->temp, temp, NULL);
+	append(&$$->code, code); 
 };
 n7: n6 { $$ = $1; };
 

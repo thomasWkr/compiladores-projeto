@@ -1,0 +1,363 @@
+
+======================================================== 
+
+===== Symbol Table =====
+Key: gataca
+Offset: 8
+  Type: INT
+  Nature: ID
+  Lexeme: gataca
+  Line: 11
+  Data Nature: ID
+------------------------
+===== Symbol Table =====
+Key: atututu
+Offset: 4
+  Type: INT
+  Nature: ID
+  Lexeme: atututu
+  Line: 9
+  Data Nature: ID
+------------------------
+===== Symbol Table =====
+Key: ablubluble
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: ablubluble
+  Line: 6
+  Data Nature: ID
+------------------------
+Key: 2
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 2
+  Line: 5
+  Data Nature: LITERAL
+------------------------
+Key: 3
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 3
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+Key: 5
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 5
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+===== Symbol Table =====
+Key: my_function
+Offset: -1
+  Type: INT
+  Nature: FUNCTION
+  Lexeme: my_function
+  Line: 3
+  Data Nature: ID
+------------------------
+Key: b
+Offset: 4
+  Type: INT
+  Nature: ID
+  Lexeme: b
+  Line: 1
+  Data Nature: ID
+------------------------
+Key: a
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: a
+  Line: 1
+  Data Nature: ID
+------------------------
+
+======================================================== 
+
+===== Symbol Table =====
+Key: tiririca
+Offset: 12
+  Type: INT
+  Nature: ID
+  Lexeme: tiririca
+  Line: 13
+  Data Nature: ID
+------------------------
+Key: atututu
+Offset: 4
+  Type: INT
+  Nature: ID
+  Lexeme: atututu
+  Line: 9
+  Data Nature: ID
+------------------------
+===== Symbol Table =====
+Key: ablubluble
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: ablubluble
+  Line: 6
+  Data Nature: ID
+------------------------
+Key: 2
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 2
+  Line: 5
+  Data Nature: LITERAL
+------------------------
+Key: 3
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 3
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+Key: 5
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 5
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+===== Symbol Table =====
+Key: my_function
+Offset: -1
+  Type: INT
+  Nature: FUNCTION
+  Lexeme: my_function
+  Line: 3
+  Data Nature: ID
+------------------------
+Key: b
+Offset: 4
+  Type: INT
+  Nature: ID
+  Lexeme: b
+  Line: 1
+  Data Nature: ID
+------------------------
+Key: a
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: a
+  Line: 1
+  Data Nature: ID
+------------------------
+
+======================================================== 
+
+===== Symbol Table =====
+Key: abububu
+Offset: 16
+  Type: INT
+  Nature: ID
+  Lexeme: abububu
+  Line: 15
+  Data Nature: ID
+------------------------
+===== Symbol Table =====
+Key: ablubluble
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: ablubluble
+  Line: 6
+  Data Nature: ID
+------------------------
+Key: 2
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 2
+  Line: 5
+  Data Nature: LITERAL
+------------------------
+Key: 3
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 3
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+Key: 5
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 5
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+===== Symbol Table =====
+Key: my_function
+Offset: -1
+  Type: INT
+  Nature: FUNCTION
+  Lexeme: my_function
+  Line: 3
+  Data Nature: ID
+------------------------
+Key: b
+Offset: 4
+  Type: INT
+  Nature: ID
+  Lexeme: b
+  Line: 1
+  Data Nature: ID
+------------------------
+Key: a
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: a
+  Line: 1
+  Data Nature: ID
+------------------------
+
+======================================================== 
+
+===== Symbol Table =====
+Key: ablubluble
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: ablubluble
+  Line: 6
+  Data Nature: ID
+------------------------
+Key: 2
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 2
+  Line: 5
+  Data Nature: LITERAL
+------------------------
+Key: 3
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 3
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+Key: 5
+Offset: -1
+  Type: INT
+  Nature: LITERAL
+  Lexeme: 5
+  Line: 4
+  Data Nature: LITERAL
+------------------------
+===== Symbol Table =====
+Key: my_function
+Offset: -1
+  Type: INT
+  Nature: FUNCTION
+  Lexeme: my_function
+  Line: 3
+  Data Nature: ID
+------------------------
+Key: b
+Offset: 4
+  Type: INT
+  Nature: ID
+  Lexeme: b
+  Line: 1
+  Data Nature: ID
+------------------------
+Key: a
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: a
+  Line: 1
+  Data Nature: ID
+------------------------
+
+======================================================== 
+
+===== Symbol Table =====
+Key: my_function
+Offset: -1
+  Type: INT
+  Nature: FUNCTION
+  Lexeme: my_function
+  Line: 3
+  Data Nature: ID
+------------------------
+Key: b
+Offset: 4
+  Type: INT
+  Nature: ID
+  Lexeme: b
+  Line: 1
+  Data Nature: ID
+------------------------
+Key: a
+Offset: 0
+  Type: INT
+  Nature: ID
+  Lexeme: a
+  Line: 1
+  Data Nature: ID
+------------------------
+digraph grafo {
+  88235808129360 [ label="my_function" ];
+  88235808129360 -> 88235808129616;
+  88235808129616 [ label="is" ];
+  88235808129616 -> 88235808129680;
+  88235808129680 [ label="a" ];
+  88235808129616 -> 88235808129552;
+  88235808129552 [ label="+" ];
+  88235808129552 -> 88235808129424;
+  88235808129424 [ label="5" ];
+  88235808129552 -> 88235808129488;
+  88235808129488 [ label="3" ];
+  88235808129616 -> 88235808129936;
+  88235808129936 [ label="is" ];
+  88235808129936 -> 88235808130000;
+  88235808130000 [ label="b" ];
+  88235808129936 -> 88235808129872;
+  88235808129872 [ label="-" ];
+  88235808129872 -> 88235808129744;
+  88235808129744 [ label="a" ];
+  88235808129872 -> 88235808129808;
+  88235808129808 [ label="2" ];
+  88235808129936 -> 88235808130896;
+  88235808130896 [ label="if" ];
+  88235808130896 -> 88235808130320;
+  88235808130320 [ label="==" ];
+  88235808130320 -> 88235808130192;
+  88235808130192 [ label="a" ];
+  88235808130320 -> 88235808130256;
+  88235808130256 [ label="b" ];
+  88235808130896 -> 88235808131472;
+  88235808131472 [ label="return" ];
+  88235808131472 -> 88235808131344;
+  88235808131344 [ label="*" ];
+  88235808131344 -> 88235808131088;
+  88235808131088 [ label="+" ];
+  88235808131088 -> 88235808130960;
+  88235808130960 [ label="a" ];
+  88235808131088 -> 88235808131024;
+  88235808131024 [ label="b" ];
+  88235808131344 -> 88235808131280;
+  88235808131280 [ label="*" ];
+  88235808131280 -> 88235808131152;
+  88235808131152 [ label="a" ];
+  88235808131280 -> 88235808131216;
+  88235808131216 [ label="b" ];
+}

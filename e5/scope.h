@@ -1,10 +1,19 @@
 #include "table.h"
 #include "errors.h"
 
-// Stack os scopes
+typedef enum
+{
+    GLOBAL,
+    FUNCTION_BLOCK,
+    COMMAND_BLOCK,
+} scope_type;
+
+// Stack of scopes
 typedef struct scope
 {
+    scope_type type;
     symbol_t *symbol_table;
+    int current_offset;
     struct scope *next_scope;
 } scope;
 
@@ -16,13 +25,15 @@ typedef struct args_stack
 } args_stack;
 
 // Adds a scope to the top of the stack
-void create_scope();
+void create_scope(int scope_type);
 
 // Adds a symbol to the top scope symbol table
-void update_table(content_t *content, char *key);
+void update_table(content_t *content, char *key, int symbol_size);
 
 // Delete and frees the top scope
 void destroy_scope();
+
+void update_current_offset();
 
 // Checks if a symbol is declared and used right
 void check_declared(value_t *data, char *key);
@@ -44,6 +55,9 @@ void compare_type(type_t type1, type_t type2, int line_number);
 
 // Search for a symbol in the scopes stack
 symbol_t *get_symbol_from_stack(char *key);
+
+// Returns the scope type of a symbol
+scope_type get_scope_type(char *key);
 
 // Returns latest symbol in global scope
 symbol_t *get_latest_function();

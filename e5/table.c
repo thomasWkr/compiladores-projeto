@@ -24,20 +24,24 @@ content_t *create_content(type_t type, nature_t nature, parameters_t *args, valu
     return aux;
 }
 
-symbol_t *new_table(content_t *content, char *key)
+symbol_t *new_table(content_t *content, char *key, int offset)
 {
     symbol_t *sym = malloc(sizeof(symbol_t));
     sym->key = key;
     sym->content = content;
+    sym->offset = offset;
+
     sym->next_symbol = NULL;
     return sym;
 }
 
-symbol_t *add_symbol(content_t *content, symbol_t *symbol_table, char *key)
+symbol_t *add_symbol(content_t *content, symbol_t *symbol_table, char *key, int offset)
 {
     symbol_t *sym = malloc(sizeof(symbol_t));
     sym->key = key;
     sym->content = content;
+    sym->offset = offset;
+
     sym->next_symbol = symbol_table;
     symbol_table = sym;
     return symbol_table;

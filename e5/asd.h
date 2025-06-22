@@ -1,11 +1,14 @@
 #ifndef _ASD_H_
 #define _ASD_H_
 #include "scope.h"
+#include "codelist.h"
 
 typedef struct asd_tree
 {
   char *label;
   int number_of_children;
+  char *temp;
+  CodeNode *code;
   struct asd_tree **children;
   value_t *lexic_value;
   type_t type;
@@ -15,6 +18,11 @@ typedef struct asd_tree
  * Função asd_new, cria um nó sem filhos com o label informado.
  */
 asd_tree_t *asd_new(const char *label, value_t *lexic_value, type_t type);
+
+/*
+ * Função asd_add_code, adiciona o código referente a esse nodo.
+ */
+void asd_add_code(asd_tree_t *tree, char *code, char *temp);
 
 /*
  * Função asd_tree, libera recursivamente o nó e seus filhos.
