@@ -1,0 +1,14 @@
+main returns int is [
+    declare x as int with 1
+
+    if (x) [
+        x is 1000
+    ] else [
+        x is -1000
+    ]
+
+    if (1) [] else []
+    if (0) []
+    if (0) [] else [ x is x + 1 ]
+    if (1) [ x is x + 1 ]
+];

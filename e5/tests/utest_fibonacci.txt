@@ -1,0 +1,25 @@
+declare global_last as int,
+declare global_current as int,
+
+fib returns int with n as int is [
+    declare i as int with 1
+    declare temp as int with 0
+    global_last is 0
+    global_current is 1
+    n is 15
+
+    if (n <= 0) [
+        return 0 as int
+    ] else [
+        if (n == 1) [
+            return 1 as int
+        ]
+    ]
+
+    while (i < n) [
+        temp is global_current
+        global_current is global_current + global_last
+        global_last is temp
+        i is i + 1
+    ]
+];

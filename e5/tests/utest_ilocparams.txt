@@ -1,0 +1,6 @@
+main returns int with x as int, y as int is [
+    declare z as int with 30
+    x is 2
+    y is 365
+    z is 500
+];

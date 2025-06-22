@@ -1,0 +1,10 @@
+declare global_var1 as int,
+declare global_var2 as int,
+
+main returns int with local_var1 as int is [
+    declare local_var2 as int with 25
+    global_var1 is 30 * 2
+    global_var2 is 30 / 3
+    local_var1 is global_var1 + global_var2
+    global_var1 is global_var2 - 100
+];

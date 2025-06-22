@@ -1,0 +1,7 @@
+main returns int is [
+    declare x as int
+    declare z as int
+
+    x is (1 + 2) * (3 - 4)
+    z is (+50 / -2) & (1 | !0)
+];

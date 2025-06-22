@@ -1,0 +1,13 @@
+main returns int is [
+    declare n as int with 1
+    declare count as int with 0
+    while (n <= 10) [
+        if ((n / 2) * 2 == n) [
+            count is count + 1
+        ] else [
+            count is count
+        ]
+        n is n + 1
+    ]
+    return count as int
+];

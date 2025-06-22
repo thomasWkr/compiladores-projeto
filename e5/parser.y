@@ -98,7 +98,7 @@ literal: TK_LI_INT {
 	$$ = asd_new($1->lexeme, $1, INT); 
 
 	char *temp = next_temp();
-	char* code = generate_iloc_individual_code("loadI", key, NULL, temp, NULL);
+	char* code = generate_iloc_individual_code("loadI", $1->lexeme, NULL, temp, NULL);
 	asd_add_code($$, code, temp);
 };
 literal: TK_LI_FLOAT { 

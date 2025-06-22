@@ -1,0 +1,9 @@
+factorial returns int is [
+    declare base as int with 7
+    declare fat as int with 1
+
+    while (base > 1) [
+        fat is fat * base
+        base is base - 1
+    ]
+];

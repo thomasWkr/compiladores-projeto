@@ -1,0 +1,13 @@
+main returns int is [
+    declare x as int with 10
+    while (x > 0) [
+        x is x - 1
+    ]
+
+    declare y as int with 2
+    while (x < 15) [
+        x is x + y
+    ]
+
+    while (x < 16) []
+];
