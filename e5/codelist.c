@@ -71,14 +71,17 @@ void concat_lists(CodeNode **list_a, CodeNode **list_b)
 
 void add_label(CodeNode **head, const char *label)
 {
+    int max_label = MAX_STR_LEN / 2 - 3;
+    int max_code = MAX_STR_LEN - max_label - 3;
+    char temp[MAX_STR_LEN];
+
     if (head && *head && label)
     {
-        int max_label = MAX_STR_LEN / 2 - 3;
-        int max_code = MAX_STR_LEN - max_label - 3;
-        char temp[MAX_STR_LEN];
-
         snprintf(temp, MAX_STR_LEN, "%.*s: %.*s", max_label, label, max_code, (*head)->code);
         strncpy((*head)->code, temp, MAX_STR_LEN - 1);
         (*head)->code[MAX_STR_LEN - 1] = '\0';
+    }else{
+        snprintf(temp, MAX_STR_LEN, "%.*s: nop", max_label, label);
+        append(head, temp);
     }
 }
