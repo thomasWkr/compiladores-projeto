@@ -35,7 +35,12 @@ char *generate_iloc_individual_code(const char *iloc_operation, const char *oper
     }
     else
     {
-        if (oper2 && dest2)
+        if (!oper1 && !dest1)
+        {
+            printf("NÚMERO INSUFICIENTE DE ARGUMENTOS NA OPERAÇÃO\n");
+            return NULL;
+        }
+        else if (oper2 && dest2)
         {
             snprintf(buffer, MAX_NAME_LEN, "%s %s, %s => %s, %s", iloc_operation, oper1, oper2, dest1, dest2);
         }
@@ -53,7 +58,7 @@ char *generate_iloc_individual_code(const char *iloc_operation, const char *oper
         }
         else
         {
-            printf("NÚMERO INSUFICIENTE DE ARGUMENTOS NA OPERAÇÃO\n");
+            printf("NÚMERO MUITO ALTO DE ARGUMENTOS NA OPERAÇÃO\n");
             return NULL;
         }
         return buffer;

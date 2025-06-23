@@ -36,7 +36,6 @@ void print_list(CodeNode *head)
         printf("%s\n", current->code);
         current = current->next;
     }
-    printf("halt");
 }
 
 void free_list(CodeNode **head)
@@ -80,7 +79,9 @@ void add_label(CodeNode **head, const char *label)
         snprintf(temp, MAX_STR_LEN, "%.*s: %.*s", max_label, label, max_code, (*head)->code);
         strncpy((*head)->code, temp, MAX_STR_LEN - 1);
         (*head)->code[MAX_STR_LEN - 1] = '\0';
-    }else{
+    }
+    else if (head && label)
+    {
         snprintf(temp, MAX_STR_LEN, "%.*s: nop", max_label, label);
         append(head, temp);
     }

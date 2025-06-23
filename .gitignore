@@ -53,6 +53,7 @@ dkms.conf
 
 # Project specific
 *.png
+*.iloc
 lex.yy.*
 parser.tab.*
 etapa*

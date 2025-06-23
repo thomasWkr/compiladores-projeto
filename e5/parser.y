@@ -336,12 +336,13 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 		compare_type($5->type, $7->type, get_line_number());
 		asd_add_child($$, $5);
 		asd_add_child($$, $7);
-		
+	
 		const char *else_end = next_label();
 
-		add_label(&$5->code, label_true);
 		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
 		asd_add_code($$, code, NULL);
+		
+		add_label(&$5->code, label_true);
 		asd_copy_code($$, &$5->code, NULL);
 
 		code = generate_iloc_flux_code("jumpI", NULL, NULL, else_end, NULL);
@@ -444,36 +445,33 @@ n0: '(' expr ')' { $$ = $2; };
 n1: '+' n1 { 
 	$$ = asd_new("+", NULL, $2->type); 
 	asd_add_child($$, $2);
-	// asd_copy_code($$, &$2->code, &$2->temp);
+	asd_copy_code($$, &$2->code, &$2->temp);
 };
 n1: '-' n1 { 
 	$$ = asd_new("-", NULL, $2->type); 
 	asd_add_child($$, $2); 
 	
-	// asd_copy_code($$, &$2->code, NULL);
-	// char *temp = next_temp();
-	// char *zero_temp = next_temp();
+	asd_copy_code($$, &$2->code, NULL);
+	char *temp = next_temp();
 
-	// char* code = generate_iloc_individual_code("loadI", "0", NULL, zero_temp, NULL);
- 	// asd_add_code($$, code, temp); 
-	// code = generate_iloc_individual_code("sub", zero_temp, $2->temp, temp, NULL);
- 	// asd_add_code($$, code, NULL); 
+	char *code = generate_iloc_individual_code("rsubI", $2->temp, "0", temp, NULL);
+ 	asd_add_code($$, code, temp); 
 };
 n1: '!' n1 { 
 	$$ = asd_new("!", NULL, $2->type); 
 	asd_add_child($$, $2);
 	
-	// $$->code = $2->code;
+	asd_copy_code($$, &$2->code, NULL);
 	
-	// char *temp = next_temp();
-	// char *zero_temp = next_temp();
+	char *temp = next_temp();
+	char *zero_temp = next_temp();
 
-	// char* zero_code = generate_iloc_individual_code("loadI", "0", NULL, zero_temp, NULL);
- 	// append(&$$->code, zero_code); 
-	// char* code = generate_iloc_individual_code("cmp_EQ", zero_temp, $2->temp, temp, NULL);
- 	// asd_add_code($$, code, temp);
+	char* zero_code = generate_iloc_individual_code("loadI", "0", NULL, zero_temp, NULL);
+ 	append(&$$->code, zero_code); 
+	char* code = generate_iloc_individual_code("cmp_EQ", zero_temp, $2->temp, temp, NULL);
+ 	asd_add_code($$, code, temp);
 
-	// $$->temp = temp; 
+	free(zero_temp); 
 };
 n1: n0 { $$ = $1; };
 
