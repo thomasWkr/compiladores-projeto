@@ -1,5 +1,5 @@
 declare a as int,
-
+declare b as int,
 main returns int is [
     declare b as int
     b is a

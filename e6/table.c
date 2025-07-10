@@ -43,9 +43,14 @@ symbol_t *add_symbol(content_t *content, symbol_t *symbol_table, char *key, int 
     sym->content = content;
     sym->offset = offset;
     sym->scope_type = scope_type;
+    sym->next_symbol = NULL;
 
-    sym->next_symbol = symbol_table;
-    symbol_table = sym;
+    symbol_t *curr = symbol_table;
+    while (curr->next_symbol != NULL)
+    {
+        curr = curr->next_symbol;
+    }
+    curr->next_symbol = sym;
     return symbol_table;
 }
 

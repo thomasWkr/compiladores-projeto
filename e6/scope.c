@@ -261,6 +261,7 @@ void create_data_segment(CodeNode **head)
     CodeNode *temp = NULL;
     append(&temp, result);
     concat_lists(&temp, head);
+    *head = temp;
     free(result);
 }
 
