@@ -27,6 +27,8 @@ void update_table(content_t *content, char *key, int symbol_size);
 // Delete and frees the top scope
 void destroy_scope();
 
+scope *get_scope();
+
 void update_current_offset();
 
 // Checks if a symbol is declared and used right
@@ -52,7 +54,5 @@ symbol_t *get_symbol_from_stack(char *key);
 
 // Returns latest symbol in global scope
 symbol_t *get_latest_function();
-
-void create_data_segment(CodeNode **head);
 
 void print_scopes();

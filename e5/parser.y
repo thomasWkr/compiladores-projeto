@@ -82,7 +82,7 @@ extern asd_tree_t *arvore;
 
 // ============================= GENERAL ==============================
 
-program: {init_counters(); create_scope(GLOBAL);} list {destroy_scope();} ';' {
+program: {init_counters(); init_counters2(); create_scope(GLOBAL);} list {destroy_scope();} ';' {
 	arvore = $2;
 };
 program: { arvore = NULL; };

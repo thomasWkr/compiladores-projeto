@@ -16,7 +16,7 @@ void create_scope(int scope_type)
         new_scope->current_offset = 0;
         break;
     case FUNCTION_BLOCK:
-        new_scope->current_offset = 0;
+        new_scope->current_offset = 4;
         break;
     case COMMAND_BLOCK:
         if (scope_stack != NULL)
@@ -99,6 +99,11 @@ void destroy_scope()
     scope_stack = scope_stack->next_scope;
     free_table(top->symbol_table);
     free(top);
+}
+
+scope *get_scope()
+{
+    return scope_stack;
 }
 
 void update_current_offset()
@@ -228,41 +233,6 @@ symbol_t *get_latest_function()
         function_scope = function_scope->next_scope;
     }
     return function_scope->symbol_table;
-}
-
-void create_data_segment(CodeNode **head)
-{
-    symbol_t *table = scope_stack->symbol_table;
-    char *result = malloc(1);
-    result[0] = '\0';
-
-    // concat all data segments
-    while (table != NULL)
-    {
-        char *key = table->key;
-        type_t type = table->content->type;
-        nature_t nature = table->content->nature;
-        char *value = table->content->data->lexeme;
-
-        char *var_section = generate_var_data_segment(key, type, nature, value);
-
-        size_t old_len = strlen(result);
-        size_t new_len = old_len + strlen(var_section) + 1;
-
-        result = realloc(result, new_len);
-
-        strcat(result, var_section);
-
-        free(var_section);
-        table = table->next_symbol;
-    }
-
-    // create code entry
-    CodeNode *temp = NULL;
-    append(&temp, result);
-    concat_lists(&temp, head);
-    *head = temp;
-    free(result);
 }
 
 void print_scopes()

@@ -82,7 +82,7 @@ extern asd_tree_t *arvore;
 
 // ============================= GENERAL ==============================
 
-program: {init_counters(); create_scope(GLOBAL);} list { create_data_segment(&$2->code); destroy_scope();} ';' {
+program: {init_counters(); init_counters2(); create_scope(GLOBAL);} list { destroy_scope();} ';' {
 	arvore = $2;
 };
 program: { arvore = NULL; };
@@ -97,8 +97,10 @@ literal: TK_LI_INT {
 	update_table(content, key, DEFAULT_SIZE);
 	$$ = asd_new($1->lexeme, $1, INT); 
 
-	char *temp = next_temp();
-	char* code = generate_iloc_individual_code("loadI", $1->lexeme, NULL, temp, NULL);
+	char lit[32];
+	sprintf(lit, "$%s", $1->lexeme); 
+	char *temp = strdup(get_reg());
+	char *code = generate_individual_code("movl", lit, temp);
 	asd_add_code($$, code, temp);
 };
 literal: TK_LI_FLOAT { 
@@ -109,7 +111,7 @@ literal: TK_LI_FLOAT {
 };
 
 element: def_func { $$ = $1; };
-element: decl_var { $$ = NULL; asd_free($1);}; // Not initialized Vars dont exist on the tree
+element: decl_var { $$ = $1; }; // Not initialized Vars dont exist on the tree
 
 list: element { $$ = $1; }; 
 list: element ',' list { 
@@ -193,7 +195,11 @@ def_func: header command_block_func {destroy_scope();} {
 	$$ = $1;
 	if ($2 != NULL) 
 		asd_add_child($1, $2);
+		char* init_code = generate_global_function_init_segment($1->label);
+		char* end_code = generate_global_function_end_segment();
+		asd_add_code($1, init_code, NULL);
 		asd_copy_code($1, &$2->code, NULL);
+		asd_add_code($1, end_code, NULL);
 };
 
 return_call: TK_PR_RETURN expr TK_PR_AS type { 
@@ -214,6 +220,10 @@ decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type {
 		$4->type, ID, NULL, create_lexic_value($2->nature, key, $2->line_number));
 	update_table(content, key, DEFAULT_SIZE); // Adds var to symbol table
 	$$ = asd_new($2->lexeme, $2, $4->type);
+	if (get_scope()->type == GLOBAL){
+		char* code = generate_global_var_segment( key, content->type, content->nature, content->data->lexeme);
+		asd_add_code($$, code, NULL);
+	}
 	asd_free($4);
 };
 
@@ -223,14 +233,15 @@ var: decl_var TK_PR_WITH literal {
 	asd_add_child($$,$3); 
 	asd_add_child($$,$1); 
 
+	//movl $literal, -offset(%rbp)
 	symbol_t *sym = get_symbol_from_stack($1->label);
 	char offset[32];
-	sprintf(offset, "%d", sym->offset); 
-
+	sprintf(offset, "-%d(%%rbp)", sym->offset); 
+	
 	asd_copy_code($$, &$3->code, NULL);
-	char* reg = sym->scope_type == GLOBAL ? "rbss" : "rfp";
-	char* code = generate_iloc_individual_code("storeAI" , $3->temp, NULL, reg, offset);
+	char* code = generate_individual_code("movl", $3->temp, offset);
 	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 var: decl_var { $$ = NULL; asd_free($1);};
 
@@ -246,12 +257,12 @@ assign: TK_ID TK_PR_IS expr {
 
 	symbol_t *sym = get_symbol_from_stack($1->lexeme);
 	char offset[32];
-	sprintf(offset, "%d", sym->offset); 
+	sprintf(offset, "-%d(%%rbp)", sym->offset); 
 
 	asd_copy_code($$, &$3->code, NULL);
-	char* reg = sym->scope_type == GLOBAL ? "rbss" : "rfp";
-	char* code = generate_iloc_individual_code("storeAI" , $3->temp, NULL, reg, offset);
+	char* code = generate_individual_code("movl" , $3->temp, offset);
 	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 
 // ========================== FUNCTION CALLS ==========================
@@ -310,11 +321,11 @@ cond_block: TK_PR_IF '(' expr ')' command_block {
 	if ($5 != NULL) {
 		asd_add_child($$, $5);
 
-		const char *label_true = next_label();
-		const char *label_false = next_label();
+		const char *label_true = next_label2();
+		const char *label_false = next_label2();
 		add_label(&$5->code, label_true);
 
-		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
 		asd_add_code($$, code, NULL);
 		asd_copy_code($$, &$5->code, NULL);
 
@@ -329,29 +340,29 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 	asd_add_child($$, $3);
 
  	asd_copy_code($$, &$3->code, NULL);
-	const char *label_true = next_label();
-	const char *label_false = next_label();
+	const char *label_true = next_label2();
+	const char *label_false = next_label2();
 	
 	if ($5 && $7){ // If both blocks aren't NULL, compares their types and adds to tree
 		compare_type($5->type, $7->type, get_line_number());
 		asd_add_child($$, $5);
 		asd_add_child($$, $7);
 	
-		const char *else_end = next_label();
+		const char *else_end = next_label2();
 
-		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
 		asd_add_code($$, code, NULL);
 		
 		add_label(&$5->code, label_true);
 		asd_copy_code($$, &$5->code, NULL);
 
-		code = generate_iloc_flux_code("jumpI", NULL, NULL, else_end, NULL);
+		code = generate_individual_flux_code("jmp", NULL, else_end, NULL);
 		asd_add_code($$, code, NULL);
 
 		add_label(&$7->code, label_false);
 		asd_copy_code($$, &$7->code, NULL);
 
-		snprintf(code, MAX_NAME_LEN, "%s: nop", else_end);
+		snprintf(code, MAX_NAME_LEN, "    %s:\n    nop", else_end);
 		asd_add_code($$, code, NULL);
 
 		free((void*)else_end);
@@ -360,32 +371,27 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 
 		add_label(&$5->code, label_true);
 		
-		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
 		asd_add_code($$, code, NULL);
 		asd_copy_code($$, &$5->code, NULL);
-		snprintf(code, MAX_NAME_LEN, "%s: nop", label_false);
+		snprintf(code, MAX_NAME_LEN, "    %s:\n    nop", label_false);
 		
 		asd_add_code($$, code, NULL);
 		
 	} else if ($7){ // If 'if' block is NULL -> do nothing
 		asd_add_child($$, $7); 
 		
-		const char *else_end = next_label();
-		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
 		asd_add_code($$, code, NULL);
-
 		add_label(&$7->code, label_false);
 		asd_copy_code($$, &$7->code, NULL);
-
-		snprintf(code, MAX_NAME_LEN, "%s: nop", label_true);
+		snprintf(code, MAX_NAME_LEN, "    %s:\n    nop", label_true);
 		asd_add_code($$, code, NULL);
-
-		free((void*)else_end);
 	} 
 
 	free((void*)label_true);
 	free((void*)label_false);
-};
+}; 
 
 iter_block: TK_PR_WHILE '(' expr ')' command_block { 
 	$$ = asd_new("while", NULL, $3->type); 
@@ -428,12 +434,19 @@ n0: TK_ID {
 	
 	$$ = asd_new($1->lexeme, $1, type_id);
 
-	char offset[32];
-	sprintf(offset, "%d", sym->offset); 
+	char label[32];
+	if (sym->scope_type == GLOBAL) {
+		// global:
+		// movl label(%rip), reg
+		sprintf(label, "%s(%%rip)", $1->lexeme);
+	} else {
+		// local:
+		// movl -offset(%rbp), reg
+		sprintf(label, "-%d(%%rbp)", sym->offset); 
+	}
 
-	char *temp = next_temp();
-	char* reg = sym->scope_type == GLOBAL ? "rbss" : "rfp";
-	char* code = generate_iloc_individual_code("loadAI" , reg, offset, temp, NULL);
+	char *temp = strdup(get_reg());
+	char *code = generate_individual_code("movl", label, temp);
 	asd_add_code($$, code, temp);
 }; 
 n0: literal { 
@@ -451,27 +464,13 @@ n1: '-' n1 {
 	$$ = asd_new("-", NULL, $2->type); 
 	asd_add_child($$, $2); 
 	
-	asd_copy_code($$, &$2->code, NULL);
-	char *temp = next_temp();
-
-	char *code = generate_iloc_individual_code("rsubI", $2->temp, "0", temp, NULL);
- 	asd_add_code($$, code, temp); 
+	asd_copy_code($$, &$2->code, &$2->temp);
 };
 n1: '!' n1 { 
 	$$ = asd_new("!", NULL, $2->type); 
 	asd_add_child($$, $2);
 	
-	asd_copy_code($$, &$2->code, NULL);
-	
-	char *temp = next_temp();
-	char *zero_temp = next_temp();
-
-	char* zero_code = generate_iloc_individual_code("loadI", "0", NULL, zero_temp, NULL);
- 	append(&$$->code, zero_code); 
-	char* code = generate_iloc_individual_code("cmp_EQ", zero_temp, $2->temp, temp, NULL);
- 	asd_add_code($$, code, temp);
-
-	free(zero_temp); 
+	asd_copy_code($$, &$2->code, &$2->temp);
 };
 n1: n0 { $$ = $1; };
 
@@ -482,25 +481,27 @@ n2: n2 '*' n1 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 
-	
-	char *temp = next_temp();
-	asd_copy_code($1, &$3->code, NULL);
+	char *temp = strdup(get_reg());
+	char *temp2 = strdup(get_reg());
+ 	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
-	char* code = generate_iloc_individual_code("mult", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp);
+
+	char* code = generate_individual_code("movl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("movl", $3->temp, temp2);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("imul", temp, temp2);
+	asd_add_code($$, code, temp2);
+	restart_regs();
 };
 n2: n2 '/' n1 { 
+	//CODE NOT IMPLEMENTED
 	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("/", NULL, $1->type); 
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 
-	char *temp = next_temp();
- 	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL);
-	char* code = generate_iloc_individual_code("div", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp);
 };
 n2: n2 '%' n1 { 
 	//CODE NOT IMPLEMENTED
@@ -519,12 +520,15 @@ n3: n3 '+' n2 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 
-	char *temp = next_temp();
+	char *temp = strdup(get_reg());
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 
-	char* code = generate_iloc_individual_code("add", $1->temp, $3->temp, temp, NULL);
+	char* code = generate_individual_code("movl", $3->temp, temp);
 	asd_add_code($$, code, temp);
+	code = generate_individual_code("addl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n3: n3 '-' n2 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -533,12 +537,15 @@ n3: n3 '-' n2 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 
-	char *temp = next_temp();
+	char *temp = strdup(get_reg());
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 
-	char* code = generate_iloc_individual_code("sub", $1->temp, $3->temp, temp, NULL);
+	char* code = generate_individual_code("movl", $3->temp, temp);
 	asd_add_code($$, code, temp);
+	code = generate_individual_code("subl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n3: n2 { $$ = $1; };
 
@@ -549,11 +556,19 @@ n4: n4 '<' n3 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 
-	char *temp = next_temp();
+	char *temp = "%edx";
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
-	char* code = generate_iloc_flux_code("cmp_LT", $1->temp, $3->temp, temp, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
 	asd_add_code($$, code, temp);
+	code = generate_individual_code("cmpl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("setg", "%dl", NULL);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("movzbl", "%dl", temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n4: n4 '>' n3 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -562,11 +577,19 @@ n4: n4 '>' n3 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 
-	char *temp = next_temp();
+	char *temp = "%edx";
  	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL); 
-	char* code = generate_iloc_flux_code("cmp_GT", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp);  
+	asd_copy_code($$, &$1->code, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
+	asd_add_code($$, code, temp);
+	code = generate_individual_code("cmpl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("setl", "%dl", NULL);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("movzbl", "%dl", temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n4: n4 TK_OC_LE n3 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -575,11 +598,19 @@ n4: n4 TK_OC_LE n3 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 
-	char *temp = next_temp();
+	char *temp = "%edx";
  	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL); 
-	char* code = generate_iloc_flux_code("cmp_LE", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp);  
+	asd_copy_code($$, &$1->code, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
+	asd_add_code($$, code, temp);
+	code = generate_individual_code("cmpl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("setge", "%dl", NULL);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("movzbl", "%dl", temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n4: n4 TK_OC_GE n3 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -588,11 +619,19 @@ n4: n4 TK_OC_GE n3 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 
-	char *temp = next_temp();
+	char *temp = "%edx";
  	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL); 
-	char* code = generate_iloc_flux_code("cmp_GE", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp); 
+	asd_copy_code($$, &$1->code, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
+	asd_add_code($$, code, temp);
+	code = generate_individual_code("cmpl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("setle", "%dl", NULL);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("movzbl", "%dl", temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n4: n3 { $$ = $1; };
 
@@ -603,11 +642,19 @@ n5: n5 TK_OC_EQ n4 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 
-	char *temp = next_temp();
+	char *temp = "%edx";
  	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL); 
-	char* code = generate_iloc_flux_code("cmp_EQ", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp);  
+	asd_copy_code($$, &$1->code, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
+	asd_add_code($$, code, temp);
+	code = generate_individual_code("cmpl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("sete", "%dl", NULL);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("movzbl", "%dl", temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n5: n5 TK_OC_NE n4 { 
 	compare_type($1->type, $3->type, get_line_number());
@@ -616,11 +663,19 @@ n5: n5 TK_OC_NE n4 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 
-	char *temp = next_temp();
+	char *temp = "%edx";
  	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL); 
-	char* code = generate_iloc_flux_code("cmp_NE", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp);  
+	asd_copy_code($$, &$1->code, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
+	asd_add_code($$, code, temp);
+	code = generate_individual_code("cmpl", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("setne", "%dl", NULL);
+	asd_add_code($$, code, NULL);
+	code = generate_individual_code("movzbl", "%dl", temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 }; 
 n5: n4 { $$ = $1; };
 
@@ -631,11 +686,15 @@ n6: n6 '&' n5 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 
-	char *temp = next_temp();
+	char *temp = strdup(get_reg());
  	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL); 
-	char* code = generate_iloc_flux_code("and", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp); 
+	asd_copy_code($$, &$1->code, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
+	asd_add_code($$, code, temp);
+	code = generate_individual_code("and", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n6: n5 { $$ = $1; };
 
@@ -646,11 +705,15 @@ n7: n7 '|' n6 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 
-	char *temp = next_temp();
+	char *temp = strdup(get_reg());
  	asd_copy_code($1, &$3->code, NULL);
-	asd_copy_code($$, &$1->code, NULL); 
-	char* code = generate_iloc_flux_code("or", $1->temp, $3->temp, temp, NULL);
-	asd_add_code($$, code, temp); 
+	asd_copy_code($$, &$1->code, NULL);
+
+	char* code = generate_individual_code("movl", $3->temp, temp);
+	asd_add_code($$, code, temp);
+	code = generate_individual_code("or", $1->temp, temp);
+	asd_add_code($$, code, NULL);
+	restart_regs();
 };
 n7: n6 { $$ = $1; };
 

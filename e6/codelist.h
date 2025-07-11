@@ -21,6 +21,9 @@ static inline void init_list(CodeNode **head)
 // Append a string to the list
 void append(CodeNode **head, char *str);
 
+// Pushes a string to the list
+void push(CodeNode **head, char *str);
+
 // Print the list
 void print_list(CodeNode *head);
 

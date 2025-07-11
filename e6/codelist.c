@@ -3,6 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+void push(CodeNode **head, char *str)
+{
+    CodeNode *new_node = malloc(sizeof(CodeNode));
+    strncpy(new_node->code, str, MAX_STR_LEN - 1);
+    new_node->code[MAX_STR_LEN - 1] = '\0';
+    new_node->next = *head;
+    *head = new_node;
+}
+
 void append(CodeNode **head, char *str)
 {
     CodeNode *new_node = malloc(sizeof(CodeNode));
