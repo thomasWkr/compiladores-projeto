@@ -5,8 +5,10 @@ main returns int is [
     declare b as int
     a is 1
     b is 6
-    while (a < b) [
-        a is a + 1
+    if (a >= 1) [
+        a is 4
+    ] else [
+        return a as int
     ]
     return a as int
 ];

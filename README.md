@@ -66,3 +66,12 @@ make
 ./etapa5 < tests/test_file.txt > outputs/exit.iloc
 python3 ilocsim.py -x -t -s --data 500 --stack 1024 outputs/exit.iloc > outputs/exit.out
 ```
+
+### E6
+
+```
+make
+./etapa6 < tests/test_file.txt > outputs/program.s
+gcc outputs/program.s -o outputs/program
+./outputs/program
+```

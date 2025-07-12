@@ -1,7 +1,7 @@
 CC = gcc 
 CFLAGS = -I. -fsanitize=address -g 
-DEPS = parser.tab.c asd.c table.c scope.c lex.yy.c main.c codelist.c ilochelper.c assembler_helper.c
-INCLUDE = asd.h table.h scope.h codelist.h ilochelper.h assembler_helper.h
+DEPS = parser.tab.c asd.c table.c scope.c lex.yy.c main.c codelist.c assembler_helper.c
+INCLUDE = asd.h table.h scope.h codelist.h assembler_helper.h
 
 ODIR=obj
 

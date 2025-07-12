@@ -82,7 +82,7 @@ extern asd_tree_t *arvore;
 
 // ============================= GENERAL ==============================
 
-program: {init_counters(); init_counters2(); create_scope(GLOBAL);} list { destroy_scope();} ';' {
+program: {init_counters2(); create_scope(GLOBAL);} list { destroy_scope();} ';' {
 	arvore = $2;
 };
 program: { arvore = NULL; };
@@ -191,15 +191,15 @@ header: TK_ID TK_PR_RETURNS type TK_PR_WITH {
 	asd_free($3);
 };
 
-def_func: header command_block_func {destroy_scope();} { 
+def_func: header {set_return_label((char*)next_label2());} command_block_func {destroy_scope();} { 
 	$$ = $1;
-	if ($2 != NULL) 
-		asd_add_child($1, $2);
-		char* init_code = generate_global_function_init_segment($1->label);
-		char* end_code = generate_global_function_end_segment();
-		asd_add_code($1, init_code, NULL);
-		asd_copy_code($1, &$2->code, NULL);
-		asd_add_code($1, end_code, NULL);
+	if ($3 != NULL) 
+		asd_add_child($1, $3);
+	char* init_code = generate_global_function_init_segment($1->label);
+	char* end_code = generate_global_function_end_segment();
+	asd_add_code($1, init_code, NULL);
+	asd_copy_code($1, &$3->code, NULL);
+	asd_add_code($1, end_code, NULL);
 };
 
 return_call: TK_PR_RETURN expr TK_PR_AS type { 
@@ -209,6 +209,14 @@ return_call: TK_PR_RETURN expr TK_PR_AS type {
 
 	$$ = asd_new("return", NULL, $4->type); 
 	asd_add_child($$, $2); 
+
+	asd_copy_code($$, &$2->code, NULL);
+	char* code = generate_individual_code("movl", $2->temp, "%eax");
+	asd_add_code($$, code, NULL);
+	code = generate_individual_flux_code("jmp", NULL, get_return_label(), NULL);
+	asd_add_code($$, code, NULL);
+	restart_regs();
+
 	asd_free($4);
 };
 
@@ -221,7 +229,7 @@ decl_var: TK_PR_DECLARE TK_ID TK_PR_AS type {
 	update_table(content, key, DEFAULT_SIZE); // Adds var to symbol table
 	$$ = asd_new($2->lexeme, $2, $4->type);
 	if (get_scope()->type == GLOBAL){
-		char* code = generate_global_var_segment( key, content->type, content->nature, content->data->lexeme);
+		char* code = generate_global_var_segment( key, content->type, content->nature, "4");
 		asd_add_code($$, code, NULL);
 	}
 	asd_free($4);
@@ -326,14 +334,16 @@ cond_block: TK_PR_IF '(' expr ')' command_block {
 		add_label(&$5->code, label_true);
 
 		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
+
 		asd_add_code($$, code, NULL);
 		asd_copy_code($$, &$5->code, NULL);
 
-		snprintf(code, MAX_NAME_LEN, "%s: nop", label_false);
+		snprintf(code, MAX_NAME_LEN, "%s:\n	nop", label_false);
 		asd_add_code($$, code, NULL);
 		free((void*)label_true);
 		free((void*)label_false);
 	}
+	restart_regs();
 };
 cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 	$$ = asd_new("if", NULL, $3->type); 
@@ -347,12 +357,12 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 		compare_type($5->type, $7->type, get_line_number());
 		asd_add_child($$, $5);
 		asd_add_child($$, $7);
-	
+
 		const char *else_end = next_label2();
 
 		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
 		asd_add_code($$, code, NULL);
-		
+
 		add_label(&$5->code, label_true);
 		asd_copy_code($$, &$5->code, NULL);
 
@@ -362,7 +372,7 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 		add_label(&$7->code, label_false);
 		asd_copy_code($$, &$7->code, NULL);
 
-		snprintf(code, MAX_NAME_LEN, "    %s:\n    nop", else_end);
+		snprintf(code, MAX_NAME_LEN, "%s:\n    nop", else_end);
 		asd_add_code($$, code, NULL);
 
 		free((void*)else_end);
@@ -374,7 +384,7 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
 		asd_add_code($$, code, NULL);
 		asd_copy_code($$, &$5->code, NULL);
-		snprintf(code, MAX_NAME_LEN, "    %s:\n    nop", label_false);
+		snprintf(code, MAX_NAME_LEN, "%s:\n    nop", label_false);
 		
 		asd_add_code($$, code, NULL);
 		
@@ -385,10 +395,10 @@ cond_block: TK_PR_IF '(' expr ')' command_block TK_PR_ELSE command_block {
 		asd_add_code($$, code, NULL);
 		add_label(&$7->code, label_false);
 		asd_copy_code($$, &$7->code, NULL);
-		snprintf(code, MAX_NAME_LEN, "    %s:\n    nop", label_true);
+		snprintf(code, MAX_NAME_LEN, "%s:\n    nop", label_true);
 		asd_add_code($$, code, NULL);
 	} 
-
+	restart_regs();
 	free((void*)label_true);
 	free((void*)label_false);
 }; 
@@ -402,21 +412,21 @@ iter_block: TK_PR_WHILE '(' expr ')' command_block {
 	if ($5 != NULL) {
 		asd_add_child($$, $5); 
 
-		const char *label_expr = next_label();
-		const char *label_true = next_label();
-		const char *label_false = next_label();
+		const char *label_expr = next_label2();
+		const char *label_true = next_label2();
+		const char *label_false = next_label2();
 
 		add_label(&$$->code, label_expr);
 		add_label(&$5->code, label_true);
 
-		char* code = generate_iloc_flux_code("cbr", $3->temp, NULL, label_true, label_false);
+		char* code = generate_individual_flux_code("cmp", $3->temp, label_true, label_false);
 		asd_add_code($$, code, NULL);
 		asd_copy_code($$, &$5->code, NULL);
 
-		code = generate_iloc_flux_code("jumpI", NULL, NULL, label_expr, NULL);
+		code = generate_individual_flux_code("jmp", NULL, label_expr, NULL);
 		asd_add_code($$, code, NULL);
 
-		snprintf(code, MAX_NAME_LEN, "%s: nop", label_false);
+		snprintf(code, MAX_NAME_LEN, "%s:\n    nop", label_false);
 		asd_add_code($$, code, NULL);
 		
 		free((void*)label_expr);
@@ -534,8 +544,8 @@ n3: n3 '-' n2 {
 	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("-", NULL, $1->type); 
-	asd_add_child($$, $1); 
-	asd_add_child($$, $3); 
+	asd_add_child($$, $1);
+	asd_add_child($$, $3);
 
 	char *temp = strdup(get_reg());
  	asd_copy_code($1, &$3->code, NULL);
@@ -556,7 +566,7 @@ n4: n4 '<' n3 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3);
 
-	char *temp = "%edx";
+	char *temp = strdup("%edx");
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 
@@ -573,11 +583,11 @@ n4: n4 '<' n3 {
 n4: n4 '>' n3 { 
 	compare_type($1->type, $3->type, get_line_number());
 
-	$$ = asd_new(">", NULL, $1->type); 
-	asd_add_child($$, $1); 
+	$$ = asd_new(">", NULL, $1->type);
+	asd_add_child($$, $1);
 	asd_add_child($$, $3);
 
-	char *temp = "%edx";
+	char *temp = strdup("%edx");
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 
@@ -594,11 +604,11 @@ n4: n4 '>' n3 {
 n4: n4 TK_OC_LE n3 { 
 	compare_type($1->type, $3->type, get_line_number());
 
-	$$ = asd_new("<=", NULL, $1->type); 
-	asd_add_child($$, $1); 
-	asd_add_child($$, $3); 
+	$$ = asd_new("<=", NULL, $1->type);
+	asd_add_child($$, $1);
+	asd_add_child($$, $3);
 
-	char *temp = "%edx";
+	char *temp = strdup("%edx");
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 
@@ -616,10 +626,10 @@ n4: n4 TK_OC_GE n3 {
 	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new(">=", NULL, $1->type); 
-	asd_add_child($$, $1); 
-	asd_add_child($$, $3); 
+	asd_add_child($$, $1);
+	asd_add_child($$, $3);
 
-	char *temp = "%edx";
+	char *temp = strdup("%edx");
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 
@@ -639,10 +649,10 @@ n5: n5 TK_OC_EQ n4 {
 	compare_type($1->type, $3->type, get_line_number());
 
 	$$ = asd_new("==", NULL, $1->type); 
-	asd_add_child($$, $1); 
+	asd_add_child($$, $1);
 	asd_add_child($$, $3);
 
-	char *temp = "%edx";
+	char *temp = strdup("%edx");
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 
@@ -663,7 +673,7 @@ n5: n5 TK_OC_NE n4 {
 	asd_add_child($$, $1); 
 	asd_add_child($$, $3); 
 
-	char *temp = "%edx";
+	char *temp = strdup("%edx");
  	asd_copy_code($1, &$3->code, NULL);
 	asd_copy_code($$, &$1->code, NULL);
 

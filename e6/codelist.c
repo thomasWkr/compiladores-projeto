@@ -85,13 +85,13 @@ void add_label(CodeNode **head, const char *label)
 
     if (head && *head && label)
     {
-        snprintf(temp, MAX_STR_LEN, "%.*s: %.*s", max_label, label, max_code, (*head)->code);
+        snprintf(temp, MAX_STR_LEN, "%.*s:\n%.*s", max_label, label, max_code, (*head)->code);
         strncpy((*head)->code, temp, MAX_STR_LEN - 1);
         (*head)->code[MAX_STR_LEN - 1] = '\0';
     }
     else if (head && label)
     {
-        snprintf(temp, MAX_STR_LEN, "%.*s: nop", max_label, label);
+        snprintf(temp, MAX_STR_LEN, "%.*s:\n    nop", max_label, label);
         append(head, temp);
     }
 }

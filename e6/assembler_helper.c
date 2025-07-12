@@ -6,7 +6,7 @@
 static int func_counter = 0;
 static int label_counter = 0;
 static int register_counter = 0;
-
+char *return_label = NULL;
 char regs[6][10] = {"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi"};
 
 void init_counters2()
@@ -69,15 +69,15 @@ char *generate_individual_flux_code(char *operation, char *temp, const char *lab
     }
     else
     {
-        if (strcmp(operation, "cmp"))
+        if (strcmp(operation, "cmp") == 0)
         {
             snprintf(buffer, MAX_NAME_LEN,
-                     "    cmp\t0, %s\n"
-                     "    jne\t%s\n"
-                     "    jmp\t%s",
+                     "    cmp\t\t$0, %s\n"
+                     "    jne %s\n"
+                     "    jmp %s",
                      temp, label_true, label_false);
         }
-        else if (strcmp(operation, "jmp"))
+        else if (strcmp(operation, "jmp") == 0)
         {
             snprintf(buffer, MAX_NAME_LEN,
                      "    jmp\t%s",
@@ -97,7 +97,7 @@ char *generate_global_var_segment(char *label, type_t type, nature_t nature, cha
     static char buffer[MAX_NAME_LEN];
 
     int size = 4;
-    char *type_id = ".long";
+    char *type_id = ".zero";
     if (nature == ID)
     {
         snprintf(buffer, 512,
@@ -128,7 +128,7 @@ char *generate_global_function_init_segment(char *label)
              "    .globl\t%s\n"
              "    .type\t%s, @function\n"
              "%s:\n"
-             ".LFB%d:"
+             ".LFB%d:\n"
              "    pushq\t%%rbp\n"
              "    movq\t%%rsp, %%rbp",
              label, label, label, func_counter);
@@ -139,8 +139,21 @@ char *generate_global_function_end_segment()
 {
     static char buffer[MAX_NAME_LEN];
     snprintf(buffer, MAX_NAME_LEN,
-             "    popq\t%%rbp"
-             ".LFE%d:",
+             "%s:\n"
+             "    popq\t%%rbp\n"
+             "    ret\n"
+             ".LFE%d:\n",
+             return_label,
              func_counter);
     return buffer;
+}
+
+void set_return_label(char *label)
+{
+    return_label = label;
+}
+
+char *get_return_label()
+{
+    return return_label;
 }
